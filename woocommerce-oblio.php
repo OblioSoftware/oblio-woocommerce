@@ -3,14 +3,14 @@
  * Plugin Name: WooCommerce Oblio
  * Plugin URI: https://www.oblio.eu
  * Description: API implementation for oblio.eu
- * Version: 1.0.30
+ * Version: 1.0.31
  * Author: Oblio Software
  * Author URI: https://www.oblio.eu
  * Text Domain: woocommerce-oblio
  *
  */
 
-define( 'OBLIO_VERSION', '1.0.30' );
+define( 'OBLIO_VERSION', '1.0.31' );
 define( 'OBLIO_AUTO_UPDATE', true );
 
 defined( 'ABSPATH' ) || exit;
@@ -233,7 +233,7 @@ if ( OBLIO_AUTO_UPDATE ) {
         
         // trying to get from cache first
         if( false == $remote = get_transient( 'oblio_update' ) ) {
-            $remote = wp_remote_get( 'https://www.oblio.eu/download/wp_info.json', array(
+            $remote = wp_remote_get( 'https://obliosoftware.github.io/builds/oblio-woocommerce.json', array(
                 'timeout' => 10,
                 'headers' => array(
                     'Accept' => 'application/json'
@@ -288,7 +288,7 @@ if ( OBLIO_AUTO_UPDATE ) {
         if( false == $remote = get_transient( 'oblio_update' ) ) {
      
             // info.json is the file with the actual plugin information on your server
-            $remote = wp_remote_get( 'https://www.oblio.eu/download/wp_info.json', array(
+            $remote = wp_remote_get( 'https://obliosoftware.github.io/builds/oblio-woocommerce.zip', array(
                 'timeout' => 10,
                 'headers' => array(
                     'Accept' => 'application/json'
