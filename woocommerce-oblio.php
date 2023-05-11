@@ -10,20 +10,13 @@
  *
  */
 
-define( 'OBLIO_VERSION', '1.0.31' );
-define( 'OBLIO_AUTO_UPDATE', true );
+define('OBLIO_VERSION', '1.0.31');
+define('OBLIO_AUTO_UPDATE', true);
+define('WP_OBLIO_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 
-defined( 'ABSPATH' ) || exit;
-
-/**
- * Load WooCommerce Oblio plugin.
- */
-if (!defined('WP_OBLIO_DIR')) {
-    define('WP_OBLIO_DIR', untrailingslashit(plugin_dir_path(__FILE__ )));
-}
+defined('ABSPATH') || exit;
 
 add_action('admin_menu', '_wp_oblio_load_plugin');
-// add_action('wp_ajax_woocommerce_mark_order_status', '_wp_oblio_load_plugin');
 add_action('oblio_sync_schedule', '_wp_oblio_sync');
 
 add_action('init', '_oblio_init');
@@ -32,16 +25,17 @@ function _oblio_init() {
     add_action( 'woocommerce_payment_complete', '_wp_oblio_payment_complete' );
 }
 
-function _wp_oblio_payment_complete( $order_id ) {
+function _wp_oblio_payment_complete($order_id) {
     _wp_oblio_load_plugin();
-    $oblio_invoice_autogen = get_option('oblio_invoice_autogen');
+    $oblio_invoice_autogen = (int) get_option('oblio_invoice_autogen');
     $oblio_invoice_autogen_use_stock = (int) get_option('oblio_invoice_autogen_use_stock');
-    if ( $oblio_invoice_autogen == '1' ) {
+    if ($oblio_invoice_autogen === 1) {
         _wp_oblio_generate_invoice( $order_id, ['use_stock' => $oblio_invoice_autogen_use_stock] );
     }
 }
+
 // ajax
-add_action( 'wp_ajax_oblio', '_wp_oblio_ajax_handler' );
+add_action('wp_ajax_oblio', '_wp_oblio_ajax_handler');
 
 // add custom field
 function _oblio_cfwc_create() {
@@ -233,7 +227,7 @@ if ( OBLIO_AUTO_UPDATE ) {
         
         // trying to get from cache first
         if( false == $remote = get_transient( 'oblio_update' ) ) {
-            $remote = wp_remote_get( 'https://obliosoftware.github.io/builds/oblio-woocommerce.json', array(
+            $remote = wp_remote_get( 'https://obliosoftware.github.io/builds/woocommerce/info.json', array(
                 'timeout' => 10,
                 'headers' => array(
                     'Accept' => 'application/json'
@@ -288,7 +282,7 @@ if ( OBLIO_AUTO_UPDATE ) {
         if( false == $remote = get_transient( 'oblio_update' ) ) {
      
             // info.json is the file with the actual plugin information on your server
-            $remote = wp_remote_get( 'https://obliosoftware.github.io/builds/oblio-woocommerce.zip', array(
+            $remote = wp_remote_get( 'https://obliosoftware.github.io/builds/woocommerce/info.json', array(
                 'timeout' => 10,
                 'headers' => array(
                     'Accept' => 'application/json'
