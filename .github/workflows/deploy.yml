@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           JSON_TEMPLATE='${{ secrets.INFO_JSON_TEMPLATE }}'
-          $(echo "$JSON_TEMPLATE" | sed 's/"[PLUGIN_VERSION]"/"1.0.31"/g;s/"[PLUGIN_LAST_UPDATE]"/"2023-05-11"/g') >> ./packaging/info.json
+          echo $(sed 's/"[PLUGIN_VERSION]"/"1.0.31"/g;s/"[PLUGIN_LAST_UPDATE]"/"2023-05-11"/g' << $JSON_TEMPLATE) >> ./packaging/info.json
 
 
       - name: Pushes to builds repository
