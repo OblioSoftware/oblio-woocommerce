@@ -25,6 +25,35 @@ jobs:
           files: deploy
           dest: ./packaging/oblio-woocommerce.zip
 
+    - name: create-json
+      id: create-json-2  # Second ID
+      uses: jsdaniell/create-json@v1.2.2
+      with:
+        name: "info.json"
+        json: |
+          '{
+            "version" : "1.0.31",
+            "url" : "https://www.oblio.eu/",
+            "download_url" : "https://obliosoftware.github.io/builds/woocommerce/oblio-woocommerce.zip",
+            "requires" : "5.0",
+            "tested" : "7.2.11",
+            "requires_php" : "5.3",
+            "last_updated" : "2023-02-17 00:00:00",
+            "sections" : {
+              "description" : "Implementare API pentru oblio.eu",
+              "installation" : "Please see <a href='https://codex.wordpress.org/Managing_Plugins#Installing_Plugins'>Installing Plugins</a> in the WordPress Codex.",
+              "changelog" : "<h4>1.0.31 - 02 Mai 2023</h4><ul><li>Limitare request bulk</li></ul>"
+            },
+            "banners" : {
+              "1x" : "https://www.oblio.eu/skins/images/favicons/oblio-icon-192x192.png"
+            },
+            "icons" : {
+              "1x" : "https://www.oblio.eu/skins/images/favicons/oblio-icon-144x144.png",
+              "2x" : "https://www.oblio.eu/skins/images/favicons/oblio-icon-192x192.png"
+            }
+          }'
+        dir: './packaging/'
+
       - name: Pushes to builds repository
         uses: cpina/github-action-push-to-another-repository@main
         env:
