@@ -16,7 +16,7 @@ jobs:
         run: |
           ls -l
           mkdir -p deploy/woocommerce-oblio
-          ls | grep -v deploy | xargs mv -t deploy/oblio
+          ls | grep -v deploy | xargs mv -t deploy/woocommerce-oblio
           ls -l
 
       - name: Zip contents
