@@ -28,7 +28,7 @@ jobs:
       - name: create-json
         shell: bash
         run: |
-          JSON_TEMPLATE=${{ secrets.INFO_JSON_TEMPLATE }}
+          JSON_TEMPLATE='${{ secrets.INFO_JSON_TEMPLATE }}'
           echo "${JSON_TEMPLATE}" >> ./packaging/info.json
 
 
