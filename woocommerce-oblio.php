@@ -3,14 +3,14 @@
  * Plugin Name: WooCommerce Oblio
  * Plugin URI: https://www.oblio.eu
  * Description: API implementation for oblio.eu
- * Version: 1.0.31
+ * Version: [PLUGIN_VERSION]
  * Author: Oblio Software
  * Author URI: https://www.oblio.eu
  * Text Domain: woocommerce-oblio
  *
  */
 
-define('OBLIO_VERSION', '1.0.31');
+define('OBLIO_VERSION', '[PLUGIN_VERSION]');
 define('OBLIO_AUTO_UPDATE', true);
 define('WP_OBLIO_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 
