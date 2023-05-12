@@ -29,7 +29,8 @@ jobs:
       - name: create-json
         shell: bash
         run: |
-          node -pe 'JSON.parse(process.argv[1]).version' "$(curl -s https://obliosoftware.github.io/builds/woocommerce/info.json)"
+          PLUGIN_VERSION=$(node -pe 'JSON.parse(process.argv[1]).version' "$(curl -s https://obliosoftware.github.io/builds/woocommerce/info.json)")
+          echo $PLUGIN_VERSION
           COMMIT_MESSAGE='${{ github.event.head_commit.message }}'
           NOW=$(date +'%Y-%m-%d %H:%M:%S')
           JSON_TEMPLATE='{"version":"[PLUGIN_VERSION]",
