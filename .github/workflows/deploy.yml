@@ -17,6 +17,7 @@ jobs:
         run: |
           PLUGIN_VERSION=$(node -pe 'JSON.parse(process.argv[1]).version' "$(curl -s https://obliosoftware.github.io/builds/woocommerce/info.json)")
           PLUGIN_NEW_VERSION=$(node -pe 'let version=process.argv[1].match(/(\d{1,})\.(\d{1,})\.(\d{1,})/);version[1] + "." + version[2] + "." + (parseInt(version[3]) + 1)' $PLUGIN_VERSION)
+          echo "PLUGIN_NEW_VERSION=$PLUGIN_NEW_VERSION" >> $GITHUB_ENV
           echo $PLUGIN_NEW_VERSION
           sed -i "s/\[PLUGIN\_VERSION\]/$PLUGIN_NEW_VERSION/" woocommerce-oblio.php
           mkdir -p deploy/woocommerce-oblio
