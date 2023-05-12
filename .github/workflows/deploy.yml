@@ -11,6 +11,7 @@ jobs:
     
     steps:
       - uses: actions/checkout@v3
+      - uses: rlespinasse/github-slug-action@v4
 
       - shell: bash
         run: |
@@ -56,6 +57,6 @@ jobs:
         with:
           source-directory: './packaging'
           target-directory: './woocommerce'
-          destination-github-username: '${{ env.GITHUB_REPOSITORY_OWNER }}'
+          destination-github-username: '${{ env.GITHUB_REPOSITORY_OWNER_PART }}'
           destination-repository-name: 'builds'
           target-branch: main
