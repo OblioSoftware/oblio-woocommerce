@@ -30,7 +30,23 @@ jobs:
         run: |
           COMMIT_MESSAGE='${{ github.event.head_commit.message }}'
           NOW=$(date +'%Y-%m-%d %H:%M:%S')
-          JSON_TEMPLATE='${{ secrets.INFO_JSON_TEMPLATE }}'
+          JSON_TEMPLATE='{"version":"[PLUGIN_VERSION]",\
+          "url":"https://www.oblio.eu/",\
+          "download_url":"https://obliosoftware.github.io/builds/woocommerce/oblio-woocommerce.zip",\
+          "requires":"5.0",\
+          "tested":"8.1.13",\
+          "requires_php":"5.6",\
+          "last_updated":"[PLUGIN_LAST_UPDATE]",\
+          "sections":{\
+          "description":"Implementare API pentru oblio.eu",\
+          "installation":"Please see <a href='https://codex.wordpress.org/Managing_Plugins#Installing_Plugins'>Installing Plugins</a> in the WordPress Codex.",\
+          "changelog":"<h4>[PLUGIN_VERSION] - [PLUGIN_LAST_UPDATE]</h4><ul><li>[COMMIT_MESSAGE]</li></ul>"\
+          },\
+          "banners":{"1x":"https://www.oblio.eu/skins/images/favicons/oblio-icon-192x192.png"},\
+          "icons":{\
+          "1x":"https://www.oblio.eu/skins/images/favicons/oblio-icon-144x144.png",\
+          "2x":"https://www.oblio.eu/skins/images/favicons/oblio-icon-192x192.png"\
+          }}'
           echo $JSON_TEMPLATE | sed "s/\[PLUGIN\_VERSION\]/1\.0\.31/g;s/\[PLUGIN\_LAST\_UPDATE\]/$NOW/g;s/\[COMMIT\_MESSAGE\]/$COMMIT_MESSAGE/g" >> ./packaging/info.json
 
       - name: Pushes to builds repository
@@ -40,6 +56,6 @@ jobs:
         with:
           source-directory: './packaging'
           target-directory: './woocommerce'
-          destination-github-username: 'OblioSoftware'
+          destination-github-username: '${{ GITHUB_REPOSITORY_OWNER }}'
           destination-repository-name: 'builds'
           target-branch: main
