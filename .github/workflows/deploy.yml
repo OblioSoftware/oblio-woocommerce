@@ -37,7 +37,7 @@ jobs:
           "requires":"5.0",
           "tested":"8.1.13",
           "requires_php":"5.6",
-          "last_updated":"$(date +'%Y-%m-%d %H:%M:%S')",
+          "last_updated":"$NOW",
           "sections":{
           "description":"Implementare API pentru oblio.eu",
           "installation":"Please see <a href='https://codex.wordpress.org/Managing_Plugins#Installing_Plugins'>Installing Plugins</a> in the WordPress Codex.",
