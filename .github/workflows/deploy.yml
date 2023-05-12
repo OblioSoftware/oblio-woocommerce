@@ -56,6 +56,6 @@ jobs:
         with:
           source-directory: './packaging'
           target-directory: './woocommerce'
-          destination-github-username: '${{ GITHUB_REPOSITORY_OWNER }}'
+          destination-github-username: '${{ $GITHUB_REPOSITORY_OWNER }}'
           destination-repository-name: 'builds'
           target-branch: main
