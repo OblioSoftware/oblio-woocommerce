@@ -26,12 +26,14 @@ jobs:
           ls -l
 
       - name: Zip contents
+        if: ${{ success() }}
         uses: vimtor/action-zip@v1
         with:
           files: deploy
           dest: ./packaging/oblio-woocommerce.zip
 
       - name: create-json
+        if: ${{ success() }}
         shell: bash
         run: |
           COMMIT_MESSAGE='${{ github.event.head_commit.message }}'
@@ -56,6 +58,7 @@ jobs:
           echo $JSON_TEMPLATE | sed "s/\[PLUGIN\_VERSION\]/$PLUGIN_NEW_VERSION/g;s/\[PLUGIN\_LAST\_UPDATE\]/$NOW/g;s/\[COMMIT\_MESSAGE\]/$COMMIT_MESSAGE/g" >> ./packaging/info.json
 
       - name: Pushes to builds repository
+        if: ${{ success() }}
         uses: cpina/github-action-push-to-another-repository@main
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
