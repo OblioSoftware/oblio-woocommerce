@@ -170,7 +170,6 @@ function oblio_bulk_action_handler( $redirect_to, $doaction, $post_ids ) {
         $link = get_post_meta($post_id, 'oblio_invoice_link', true);
         if (empty($link)) {
             $result = _wp_oblio_generate_invoice( $post_id, ['use_stock' => $oblio_invoice_autogen_use_stock] );
-            usleep(200000);
         }
     }
     $redirect_to = add_query_arg( 'oblio_bulk_posts', count( $post_ids ), $redirect_to );
@@ -692,27 +691,15 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     
     $link = get_post_meta($order_id, $link_key, true);
     if ($link) {
-        try {
-            require_once WP_OBLIO_DIR . '/includes/OblioApi.php';
-            require_once WP_OBLIO_DIR . '/includes/AccessTokenHandler.php';
-            
-            $inv_number         = get_post_meta($order_id, $number_key, true);
-            $inv_series_name    = get_post_meta($order_id, $series_name_key, true);
-            $accessTokenHandler = new AccessTokenHandler();
-            $api = new OblioApi($email, $secret, $accessTokenHandler);
-            $api->setCif($cui);
-            $response = $api->get($options['docType'], $inv_series_name, $inv_number);
-            if (!empty($options['redirect'])) {
-                wp_redirect($response['data']['link']);
-                die;
-            }
-            return $response['data'];
-        } catch (Exception $e) {
-            update_post_meta($post->ID, $series_name_key, '');
-            update_post_meta($post->ID, $number_key, '');
-            update_post_meta($post->ID, $link_key, '');
-            update_post_meta($post->ID, $date_key, '');
+        if (!empty($options['redirect'])) {
+            wp_redirect($link);
+            die;
         }
+        return [
+            'seriesName' => get_post_meta($order_id, $number_key, true),
+            'number'     => get_post_meta($order_id, $series_name_key, true),
+            'link'       => $link,
+        ];
     }
     
     $order       = new WC_Order($order_id);
@@ -751,8 +738,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
         $orderMeta['_payment_method_title'][0],
     );
     $collect = [];
-    if ($auto_collect !== 0 && isset($orderMeta['_payment_method_title'])) {
-        $isCard = preg_match('/card/i', $orderMeta['_payment_method_title'][0]) ||
+    if ($auto_collect !== 0) {
+        $isCard = preg_match('/card/i', $orderMeta['_payment_method_title'][0] ?? '') ||
             in_array($orderMeta['_payment_method'][0], ['stripe_cc', 'paylike', 'ipay', 'netopiapayments']);
         if (($auto_collect === 1 && $isCard) || $auto_collect === 2) {
             $collect = [
@@ -1139,7 +1126,6 @@ function _wp_oblio_status_complete($order_id, $old_status, $new_status) {
         $oblio_invoice_autogen_use_stock = (int) get_option('oblio_invoice_autogen_use_stock');
         if ($oblio_invoice_autogen == '1') {
             _wp_oblio_generate_invoice($order_id, ['use_stock' => $oblio_invoice_autogen_use_stock]);
-            usleep(200000);
         }
     }
 }
@@ -1292,6 +1278,6 @@ function _wp_oblio_get_languages() {
 }
 
 function _wp_oblio_help() {
-    header( 'Location: https://www.oblio.eu/info/integrari/woocommerce', true, 301 );
+    header( 'Location: https://www.oblio.eu/integrari/woocommerce', true, 301 );
     exit;
 }
