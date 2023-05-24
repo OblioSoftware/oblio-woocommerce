@@ -13,16 +13,13 @@ class Oblio_Products {
         
         if ( $data['code'] ) {
             $product_id = (int) wc_get_product_id_by_sku( $data['code'] );
+        	return $product_id > 0 ? $this->get( $product_id ) : null;
         }
-        
-        if ( $product_id > 0 ) {
-            return $this->get( $product_id );
-        } else {
-            $post = get_page_by_title( $data['name'], OBJECT, 'product' );
-            if ( $post ) {
-                return $post;
-            }
-        }
+		
+		$post = get_page_by_title( $data['name'], OBJECT, 'product' );
+		if ( $post ) {
+			return $post;
+		}
         return null;
     }
     
