@@ -895,7 +895,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             $data['products'][] = [
                 'name'                      => $getProductName($item, $product),
                 'code'                      => $getProductSku($item, $product),
-                'description'               => '', // $getProductDescription($item),
+                'description'               => _wp_oblio_get_product_description($item),
                 'price'                     => round($productPrice / $package_number, $data['precision'] + 2),
                 'measuringUnit'             => $measuringUnit,
                 'measuringUnitTranslation'  => $measuringUnitTranslation,
@@ -947,11 +947,12 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             $total += $shipping;
         }
         if (number_format($total, 2, '.', '') !== number_format($order->get_total(), 2, '.', '')) {
+            $difference = $order->get_total() - $total;
             $data['products'][] = [
-                'name'                      => 'Alte taxe',
+                'name'                      => $difference > 0 ? 'Alte taxe' : 'Discount',
                 'code'                      => '',
                 'description'               => '',
-                'price'                     => number_format($order->get_total() - $total, 2, '.', ''),
+                'price'                     => number_format($difference, 2, '.', ''),
                 'measuringUnit'             => $measuringUnit,
                 'measuringUnitTranslation'  => $measuringUnitTranslation,
                 'currency'                  => $currency,
@@ -1013,6 +1014,36 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             'error' => nl2br($message)
         );
     }
+}
+
+function _wp_oblio_get_product_description($item) {
+    $hidden_order_itemmeta = apply_filters(
+        'woocommerce_hidden_order_itemmeta',
+        array(
+            '_qty',
+            '_tax_class',
+            '_product_id',
+            '_variation_id',
+            '_line_subtotal',
+            '_line_subtotal_tax',
+            '_line_total',
+            '_line_tax',
+            'method_id',
+            'cost',
+            '_reduced_stock',
+            '_restock_refunded_items',
+        )
+    );
+	$meta_data = $item->get_all_formatted_meta_data('');
+    $description = '';
+    foreach ($meta_data as $meta_id => $meta) {
+        if (in_array($meta->key, $hidden_order_itemmeta, true)) {
+            continue;
+        }
+
+        $description .= wp_kses_post($meta->display_key) . ': ' . wp_kses_post(force_balance_tags($meta->display_value));
+    }
+    return $description;
 }
 
 function _wp_oblio_add_to_log(int $order_id, array $data) {
