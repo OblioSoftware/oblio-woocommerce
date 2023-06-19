@@ -493,6 +493,9 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
 }
 
 function _wp_oblio_get_product_description($item) {
+    if (!method_exists($item, 'get_all_formatted_meta_data')) {
+        return '';
+    }
     $hidden_order_itemmeta = apply_filters(
         'woocommerce_hidden_order_itemmeta',
         array(
