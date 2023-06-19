@@ -289,6 +289,9 @@ function _wp_oblio_add_invoice_column_content($column) {
  */
 
 function _wp_oblio_login_page() {
+    if (function_exists('flush_rewrite_rules')) {
+        flush_rewrite_rules();
+    }
     include WP_OBLIO_DIR . '/view/login_page.php';
 }
 
