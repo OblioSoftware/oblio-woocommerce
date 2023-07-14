@@ -447,6 +447,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
         }
     }
     
+    $data = apply_filters( 'woocommerce_oblio_invoice_data', $data, $order_id );
+    
     try {
         require_once WP_OBLIO_DIR . '/includes/OblioApi.php';
         require_once WP_OBLIO_DIR . '/includes/AccessTokenHandler.php';
