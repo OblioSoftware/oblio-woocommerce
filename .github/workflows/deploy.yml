@@ -55,7 +55,7 @@ jobs:
           "1x":"https://www.oblio.eu/skins/images/favicons/oblio-icon-144x144.png",
           "2x":"https://www.oblio.eu/skins/images/favicons/oblio-icon-192x192.png"
           }}'
-          echo $JSON_TEMPLATE | sed "s/\[PLUGIN\_VERSION\]/$PLUGIN_NEW_VERSION/g;s/\[PLUGIN\_LAST\_UPDATE\]/$NOW/g;s/\[COMMIT\_MESSAGE\]/$COMMIT_MESSAGE/g" >> ./packaging/info.json
+          echo $JSON_TEMPLATE | sed "/\//d;s/\[PLUGIN\_VERSION\]/$PLUGIN_NEW_VERSION/g;s/\[PLUGIN\_LAST\_UPDATE\]/$NOW/g;s/\[COMMIT\_MESSAGE\]/$COMMIT_MESSAGE/g" >> ./packaging/info.json
 
       - name: Pushes to builds repository
         if: ${{ success() }}
