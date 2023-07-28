@@ -6,8 +6,8 @@ add_action('oblio_sync_schedule', '_wp_oblio_sync');
 
 add_action('init', '_oblio_init');
 function _oblio_init() {
-    add_action( 'woocommerce_order_status_changed', '_wp_oblio_status_complete', 99, 3 );
-    add_action( 'woocommerce_payment_complete', '_wp_oblio_payment_complete' );
+    add_action('woocommerce_order_status_changed', '_wp_oblio_status_complete', 99, 3);
+    add_action('woocommerce_payment_complete', '_wp_oblio_payment_complete');
 }
 
 function _wp_oblio_payment_complete($order_id) {
@@ -15,7 +15,7 @@ function _wp_oblio_payment_complete($order_id) {
     $oblio_invoice_autogen = (int) get_option('oblio_invoice_autogen');
     $oblio_invoice_autogen_use_stock = (int) get_option('oblio_invoice_autogen_use_stock');
     if ($oblio_invoice_autogen === 1) {
-        _wp_oblio_generate_invoice( $order_id, ['use_stock' => $oblio_invoice_autogen_use_stock] );
+        _wp_oblio_generate_invoice($order_id, ['use_stock' => $oblio_invoice_autogen_use_stock]);
     }
 }
 
@@ -36,11 +36,8 @@ function _wp_oblio_ajax_handler() {
     }
     
     try {
-        require_once WP_OBLIO_DIR . '/includes/OblioApi.php';
-        require_once WP_OBLIO_DIR . '/includes/AccessTokenHandler.php';
-        
-        $accessTokenHandler = new AccessTokenHandler();
-        $api = new OblioApi($email, $secret, $accessTokenHandler);
+        $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
+        $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
         $api->setCif($cui);
         
         switch ($type) {
@@ -80,20 +77,20 @@ function _wp_oblio_ajax_handler() {
 function _oblio_cfwc_create() {
     $args = array(
         'id'            => 'custom_package_number',
-        'label'         => __( 'Bucati pe pachet', 'cfwc' ),
+        'label'         => __('Bucati pe pachet', 'cfwc'),
         'class'         => 'cfwc-custom-field',
         // 'desc_tip'      => false,
-        // 'description'   => __( 'Enter the title of your custom text field.', 'ctwc' ),
+        // 'description'   => __('Enter the title of your custom text field.', 'ctwc'),
     );
     woocommerce_wp_text_input($args);
     
     $args = array(
         'id'            => 'custom_product_type',
-        'label'         => __( 'Tip produse', 'cfwc' ),
+        'label'         => __('Tip produse', 'cfwc'),
         'class'         => 'select short cfwc-custom-field',
         'options'       => ['' => 'Valoare implicita'] + _wp_oblio_get_products_type(),
         // 'desc_tip'      => false,
-        // 'description'   => __( 'Enter the title of your custom text field.', 'ctwc' ),
+        // 'description'   => __('Enter the title of your custom text field.', 'ctwc'),
     );
     woocommerce_wp_select($args);
 }
@@ -190,28 +187,28 @@ function _wp_oblio_new_order($order_id) {
 }
 
 // bulk options
-add_filter( 'bulk_actions-edit-shop_order', 'register_oblio_bulk_actions', 10 );
+add_filter('bulk_actions-edit-shop_order', 'register_oblio_bulk_actions', 10);
 
 function register_oblio_bulk_actions($bulk_actions) {
-    $bulk_actions['oblio_bulk_action'] = __( 'Genereaza factura in Oblio', 'oblio_bulk_action');
+    $bulk_actions['oblio_bulk_action'] = __('Genereaza factura in Oblio', 'oblio_bulk_action');
     return $bulk_actions;
 }
 
-add_filter( 'handle_bulk_actions-edit-shop_order', 'oblio_bulk_action_handler', 10, 3 );
+add_filter('handle_bulk_actions-edit-shop_order', 'oblio_bulk_action_handler', 10, 3);
 
-function oblio_bulk_action_handler( $redirect_to, $doaction, $post_ids ) {
-    if ( $doaction !== 'oblio_bulk_action' ) {
+function oblio_bulk_action_handler($redirect_to, $doaction, $post_ids) {
+    if ($doaction !== 'oblio_bulk_action') {
         return $redirect_to;
     }
     $oblio_invoice_autogen_use_stock = (int) get_option('oblio_invoice_autogen_use_stock');
     sort($post_ids, SORT_NUMERIC);
-    foreach ( $post_ids as $post_id ) {
+    foreach ($post_ids as $post_id) {
         $link = get_post_meta($post_id, 'oblio_invoice_link', true);
         if (empty($link)) {
-            $result = _wp_oblio_generate_invoice( $post_id, ['use_stock' => $oblio_invoice_autogen_use_stock] );
+            $result = _wp_oblio_generate_invoice($post_id, ['use_stock' => $oblio_invoice_autogen_use_stock]);
         }
     }
-    $redirect_to = add_query_arg( 'oblio_bulk_posts', count( $post_ids ), $redirect_to );
+    $redirect_to = add_query_arg('oblio_bulk_posts', count($post_ids), $redirect_to);
     return $redirect_to;
 }
 
@@ -330,11 +327,8 @@ function _wp_oblio_settings_page() {
     }
     if (!$error) {
         try {
-            require_once WP_OBLIO_DIR . '/includes/OblioApi.php';
-            require_once WP_OBLIO_DIR . '/includes/AccessTokenHandler.php';
-            
-            $accessTokenHandler = new AccessTokenHandler();
-            $api = new OblioApi($email, $secret, $accessTokenHandler);
+            $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
+            $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
             
             // get companies
             $companies = $api->nomenclature('companies');

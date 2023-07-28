@@ -1,92 +1,10 @@
 <?php
-// https://github.com/svyatov/CurlWrapper/blob/master/CurlWrapper.php
-require_once 'CurlWrapper.php';
 
-/**
- *   $defaultData = array(
- *       'cif'                => '',
- *       'client'             => [
- *           'cif'           => '',
- *           'name'          => '',
- *           'rc'            => '',
- *           'code'          => '',
- *           'address'       => '',
- *           'state'         => '',
- *           'city'          => '',
- *           'country'       => '',
- *           'iban'          => '',
- *           'bank'          => '',
- *           'email'         => '',
- *           'phone'         => '',
- *           'contact'       => '',
- *           'vatPayer'      => '',
- *       ],
- *       'issueDate'          => 'yyyy-mm-dd',
- *       'dueDate'            => '',
- *       'deliveryDate'       => '',
- *       'collectDate'        => '',
- *       'seriesName'         => '',
- *       'collect'            => [],
- *       'referenceDocument'  => [],
- *       'language'           => 'RO',
- *       'precision'          => 2,
- *       'currency'           => 'RON',
- *       'products'           => [
- *          [
- *              'name'          => '',
- *              'code'          => '',
- *              'description'   => '',
- *              'price'         => '',
- *              'measuringUnit' => 'buc',
- *              'currency'      => 'RON',
- *              'vatName'       => 'Normala',
- *              'vatPercentage' => 19,
- *              'vatIncluded'   => true,
- *              'quantity'      => 2,
- *          ]
- *       ],
- *       'issuerName'         => '',
- *       'issuerId'           => '',
- *       'noticeNumber'       => '',
- *       'internalNote'       => '',
- *       'deputyName'         => '',
- *       'deputyIdentityCard' => '',
- *       'deputyAuto'         => '',
- *       'selesAgent'         => '',
- *       'mentions'           => '',
- *       'value'              => 0,
- *       'workStation'        => 'Sediu',
- *       'useStock'           => 0,
- *   );
- *   try {
- *       $issuerCif = ''; // your company CIF
- *       $api = new OblioApi($email, $secret);
- *       // create invoice:
- *       $result = $api->createInvoice($defaultData);
- *       
- *       // create proforma:
- *       $result = $api->createProforma($defaultData);
- *       
- *       // create notice:
- *       $result = $api->createNotice($defaultData);
- *   
- *       // get document:
- *       $api->setCif($issuerCif);
- *       $result = $api->get('invoice', $seriesName, $number);
- *   
- *       // cancel/restore document:
- *       $api->setCif($issuerCif);
- *       $result = $api->cancel('invoice', $seriesName, $number, true/false);
- *   
- *       // delete document:
- *       $api->setCif($issuerCif);
- *       $result = $api->delete('invoice', $seriesName, $number);
- *   } catch (Exception $e) {
- *       // error handle
- *   }
- */
+namespace OblioSoftware;
 
-class OblioApi {
+use Exception;
+
+class Api {
     protected $_cif                 = '';
     protected $_email               = '';
     protected $_secret              = '';
@@ -97,17 +15,17 @@ class OblioApi {
      *  API constructor
      *  @param string $email - account login email
      *  @param string $secret - find token in: account settings > API secret
-     *  @param OblioApiAccessTokenHandlerInterface $accessTokenHandler (optional)
+     *  @param Api\AccessTokenHandlerInterface $accessTokenHandler (optional)
      */
     public function __construct($email, $secret, $accessTokenHandler = null) {
         $this->_email  = $email;
         $this->_secret = $secret;
         
         if (!$accessTokenHandler) {
-            $accessTokenHandler = new OblioApiAccessTokenHandler();
+            $accessTokenHandler = new Api\AccessTokenHandler();
         }
-        if (!$accessTokenHandler instanceof OblioApiAccessTokenHandlerInterface) {
-            throw new Exception('accessTokenHandler class needs to implement OblioApiAccessTokenHandlerInterface');
+        if (!$accessTokenHandler instanceof Api\AccessTokenHandlerInterface) {
+            throw new \Exception('accessTokenHandler class needs to implement OblioApiAccessTokenHandlerInterface');
         }
         $this->_accessTokenHandler = $accessTokenHandler;
     }
@@ -293,54 +211,10 @@ class OblioApi {
         if ($transferInfo['http_code'] !== 200) {
             $message = json_decode($request->getResponse());
             if (!$message) {
-                $message = new stdClass();
+                $message = new \stdClass();
                 $message->statusMessage = sprintf('Error! HTTP response status: %d', $transferInfo['http_code']);
             }
             throw new Exception($message->statusMessage, $transferInfo['http_code']);
         }
-    }
-}
-
-// class AccessTokenHandler needs to implement OblioApiAccessTokenHandlerInterface
-interface OblioApiAccessTokenHandlerInterface {
-    /**
-     *  @return stdClass $accessToken
-     */
-    public function get();
-    
-    /**
-     *  @param stdClass $accessToken
-     */
-    public function set($accessToken);
-}
-
-class OblioApiAccessTokenHandler implements OblioApiAccessTokenHandlerInterface {
-    protected $_accessTokenFileHeader   = '<?php die;?>';
-    protected $_accessTokenFilePath     = '';
-    
-    public function __construct($accessTokenFilePath = null) {
-        if ($accessTokenFilePath) {
-            $this->_accessTokenFilePath = $accessTokenFilePath;
-        } else {
-            $this->_accessTokenFilePath = realpath(dirname(__FILE__)) . '/access_token.php';
-        }
-    }
-    
-    public function get() {
-        if (file_exists($this->_accessTokenFilePath)) {
-            $accessTokenFileContent = str_replace($this->_accessTokenFileHeader, '', file_get_contents($this->_accessTokenFilePath));
-            $accessToken = json_decode($accessTokenFileContent);
-            if ($accessToken && $accessToken->request_time + $accessToken->expires_in > time()) {
-                return $accessToken;
-            }
-        }
-        return false;
-    }
-    
-    public function set($accessToken) {
-        if (!is_string($accessToken)) {
-            $accessToken = json_encode($accessToken);
-        }
-        file_put_contents($this->_accessTokenFilePath, $this->_accessTokenFileHeader . $accessToken);
     }
 }

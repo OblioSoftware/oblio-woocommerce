@@ -18,6 +18,9 @@ define('WP_OBLIO_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 defined('ABSPATH') || exit;
 
 include WP_OBLIO_DIR . '/includes/Hooks.php';
+include WP_OBLIO_DIR . '/src/Autoloader.php';
+
+OblioSoftware\Autoloader::init(WP_OBLIO_DIR . '/src');
 
 if (OBLIO_AUTO_UPDATE) {
     include WP_OBLIO_DIR . '/includes/Update.php';
@@ -28,7 +31,6 @@ function _wp_oblio_sync(&$error = '') {
     $secret       = get_option('oblio_api_secret');
     $cui          = get_option('oblio_cui');
     $use_stock    = get_option('oblio_use_stock');
-    $series_name  = get_option('oblio_series_name');
     $workstation  = get_option('oblio_workstation');
     $management   = get_option('oblio_management');
     $product_type = get_option('oblio_product_type');
@@ -53,16 +55,13 @@ function _wp_oblio_sync(&$error = '') {
     
     $total = 0;
     try {
-        require_once WP_OBLIO_DIR . '/includes/Products.php';
-        require_once WP_OBLIO_DIR . '/includes/OblioApi.php';
-        require_once WP_OBLIO_DIR . '/includes/AccessTokenHandler.php';
-        $accessTokenHandler = new AccessTokenHandler();
-        $api = new OblioApi($email, $secret, $accessTokenHandler);
+        $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
+        $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
         $api->setCif($cui);
         
         $offset = 0;
         $limitPerPage = 250;
-        $model = new Oblio_Products();
+        $model = new OblioSoftware\Products();
         do {
             if ($offset > 0) {
                 usleep(500000);
@@ -108,7 +107,6 @@ function _wp_oblio_delete_invoice($order_id, $options = []) {
     $email       = get_option('oblio_email');
     $secret      = get_option('oblio_api_secret');
     $cui         = get_option('oblio_cui');
-    $management  = get_option('oblio_management');
     $result      = array(
         'type'    => 'error',
         'message' => '',
@@ -126,11 +124,8 @@ function _wp_oblio_delete_invoice($order_id, $options = []) {
     $link        = get_post_meta($order_id, $link_key, true);
     if ($link) {
         try {
-            require_once WP_OBLIO_DIR . '/includes/OblioApi.php';
-            require_once WP_OBLIO_DIR . '/includes/AccessTokenHandler.php';
-            
-            $accessTokenHandler = new AccessTokenHandler();
-            $api = new OblioApi($email, $secret, $accessTokenHandler);
+            $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
+            $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
             $api->setCif($cui);
             $response = $api->delete($options['docType'], $series_name, $number);
             if ($response['status'] === 200) {
@@ -337,7 +332,6 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
         $measuringUnit = get_option('oblio_invoice_measuring_unit') ? get_option('oblio_invoice_measuring_unit') : 'buc';
         $measuringUnitTranslation = $data['language'] == 'RO' ? '' : get_option('oblio_invoice_measuring_unit_translation', '');
         $total = 0;
-        $hasDiscounts = $discount_in_product;
         foreach ($order_items as $item) {
             $product = wc_get_product($item['product_id']);
             $package_number = $getProductPackageNumber($item, $product);
@@ -394,7 +388,6 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                         'discountType'  => 'valoric',
                     ];
                 }
-                $hasDiscounts = true;
             }
         }
         if ($order->get_shipping_total() > 0) {
@@ -450,11 +443,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     $data = apply_filters( 'woocommerce_oblio_invoice_data', $data, $order_id );
     
     try {
-        require_once WP_OBLIO_DIR . '/includes/OblioApi.php';
-        require_once WP_OBLIO_DIR . '/includes/AccessTokenHandler.php';
-        
-        $accessTokenHandler = new AccessTokenHandler();
-        $api = new OblioApi($email, $secret, $accessTokenHandler);
+        $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
+        $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
         switch ($options['docType']) {
             case 'proforma': $result = $api->createProforma($data); break;
             default: $result = $api->createInvoice($data);
@@ -474,7 +464,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                 ));
             }
             if (!empty($options['redirect'])) {
-                wp_redirect($response['data']['link']);
+                wp_redirect($result['data']['link']);
                 die;
             }
             return $result['data'];
@@ -593,7 +583,6 @@ function _wp_oblio_get_reference_document($order_id, $options = []) {
     }
     switch ($options['docType']) {
         case 'invoice':
-            $docType = 'proforma';
             $series_name  = get_post_meta($order_id, 'oblio_proforma_series_name', true);
             $number       = get_post_meta($order_id, 'oblio_proforma_number', true);
             $link         = get_post_meta($order_id, 'oblio_proforma_link', true);

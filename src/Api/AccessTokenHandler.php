@@ -1,6 +1,8 @@
 <?php
 
-class AccessTokenHandler implements OblioApiAccessTokenHandlerInterface {
+namespace OblioSoftware\Api;
+
+class AccessTokenHandler implements AccessTokenHandlerInterface {
     protected $_key = 'oblio_api_access_token';
     
     public function get() {
@@ -11,7 +13,7 @@ class AccessTokenHandler implements OblioApiAccessTokenHandlerInterface {
                 return $accessToken;
             }
         }
-        return false;
+        return null;
     }
     
     public function set($accessToken) {

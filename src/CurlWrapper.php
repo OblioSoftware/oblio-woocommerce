@@ -1,4 +1,9 @@
 <?php
+
+namespace OblioSoftware;
+
+use Exception;
+
 /**
  * CurlWrapper - Flexible wrapper class for PHP cURL extension
  *
