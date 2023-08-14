@@ -167,7 +167,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     $gen_date     = (int) get_option('oblio_gen_date');
     $auto_collect = (int) get_option('oblio_auto_collect');
     
-    $discount_in_product = (int) get_option('oblio_invoice_discount_in_product');
+    $discount_in_product  = (int) get_option('oblio_invoice_discount_in_product');
+    $vat_from_woocommerce = (bool) get_option('oblio_invoice_vat_from_woocommerce');
     
     if (empty($options['docType'])) {
         $options['docType'] = 'invoice';
@@ -370,8 +371,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                 'measuringUnit'             => $measuringUnit,
                 'measuringUnitTranslation'  => $measuringUnitTranslation,
                 'currency'                  => $currency,
-                'vatName'                   => $vatName,
-                'vatPercentage'             => $vatPercentage,
+                'vatName'                   => $vat_from_woocommerce ? $vatName : '',
+                'vatPercentage'             => $vat_from_woocommerce ? $vatPercentage : null,
                 'vatIncluded'               => true,
                 'quantity'                  => round($item['quantity'] * $package_number, $data['precision']),
                 'productType'               => $getProductType($item, $product),
@@ -407,8 +408,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                 'measuringUnit'             => $measuringUnit,
                 'measuringUnitTranslation'  => $measuringUnitTranslation,
                 'currency'                  => $currency,
-                'vatName'                   => $vatName,
-                'vatPercentage'             => $vatPercentage,
+                'vatName'                   => $vat_from_woocommerce ? $vatName : '',
+                'vatPercentage'             => $vat_from_woocommerce ? $vatPercentage : null,
                 'vatIncluded'               => true,
                 'quantity'                  => 1,
                 'productType'               => 'Serviciu',
@@ -425,8 +426,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                 'measuringUnit'             => $measuringUnit,
                 'measuringUnitTranslation'  => $measuringUnitTranslation,
                 'currency'                  => $currency,
-                'vatName'                   => $vatName,
-                'vatPercentage'             => $vatPercentage,
+                'vatName'                   => $vat_from_woocommerce ? $vatName : '',
+                'vatPercentage'             => $vat_from_woocommerce ? $vatPercentage : null,
                 'vatIncluded'               => true,
                 'quantity'                  => 1,
                 'productType'               => 'Serviciu',
@@ -449,7 +450,9 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             case 'proforma': $result = $api->createProforma($data); break;
             default: $result = $api->createInvoice($data);
         }
-        // _wp_oblio_add_to_log($order_id, $result);
+
+        do_action('woocommerce_oblio_invoice_result', $result, $order_id, $options);
+
         if ($result['status'] == 200) {
             update_post_meta($order_id, $series_name_key, $result['data']['seriesName']);
             update_post_meta($order_id, $number_key, $result['data']['number']);

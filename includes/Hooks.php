@@ -246,6 +246,7 @@ function _wp_register_oblio_plugin_settings() {
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_seles_agent');
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_mentions');
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_discount_in_product');
+    register_setting('oblio-plugin-settings-group', 'oblio_invoice_vat_from_woocommerce');
 }
 
 function _wp_oblio_status_complete($order_id, $old_status, $new_status) {
