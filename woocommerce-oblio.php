@@ -39,21 +39,7 @@ function _wp_oblio_sync(&$error = '') {
     if (!$email || !$secret || !$cui || !$use_stock) {
         return 0;
     }
-    
-    $getProductType = function($post) use ($product_type) {
-        if (!$post) {
-            return '';
-        }
-        $custom_product_type = trim(get_post_meta($post->ID, 'custom_product_type', true));
-        if ($custom_product_type) {
-            return $custom_product_type;
-        }
-        if ($product_type) {
-            return $product_type;
-        }
-        return 'Marfa';
-    };
-    
+
     $total = 0;
     try {
         $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
@@ -86,7 +72,7 @@ function _wp_oblio_sync(&$error = '') {
             foreach ($products['data'] as $product) {
                 $index++;
                 $post = $service->find($product);
-                if ($post && $getProductType($post) !== $product['productType']) {
+                if ($post && _wp_oblio_get_product_type($post->ID, $product_type) !== $product['productType']) {
                     continue;
                 }
                 if ($post) {
@@ -326,18 +312,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             }
             return $package_number;
         };
-        
-        $getProductType = function($item, $product) use ($product_type) {
-            $custom_product_type = trim(get_post_meta($item['product_id'], 'custom_product_type', true));
-            if ($custom_product_type) {
-                return $custom_product_type;
-            }
-            if ($product_type) {
-                return $product_type;
-            }
-            return 'Marfa';
-        };
-        
+
         $normalRate = 19;
         $vatIncluded = $orderMeta['_prices_include_tax'][0] === 'yes';
         
@@ -386,7 +361,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                 'vatPercentage'             => $vat_from_woocommerce ? $vatPercentage : null,
                 'vatIncluded'               => true,
                 'quantity'                  => round($item['quantity'] * $package_number, $data['precision']),
-                'productType'               => $getProductType($item, $product),
+                'productType'               => _wp_oblio_get_product_type($item['product_id'], $product_type),
                 'management'                => $management,
                 'save'                      => true
             ];
@@ -529,6 +504,14 @@ function _wp_oblio_get_product_description($item) {
         $description .= wp_kses_post($meta->display_key) . ': ' . wp_kses_post(force_balance_tags($meta->display_value));
     }
     return $description;
+}
+
+function _wp_oblio_get_product_type($id, $product_type = 'Marfa') {
+    $custom_product_type = trim(get_post_meta($id, 'custom_product_type', true));
+    if ($custom_product_type) {
+        return $custom_product_type;
+    }
+    return $product_type;
 }
 
 function _wp_oblio_add_to_log(int $order_id, array $data) {
