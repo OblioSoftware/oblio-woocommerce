@@ -34,6 +34,7 @@ function _wp_oblio_sync(&$error = '') {
     $workstation  = get_option('oblio_workstation');
     $management   = get_option('oblio_management');
     $product_type = get_option('oblio_product_type');
+    $oblio_stock_adjusments = (int) get_option('oblio_stock_adjusments');
     
     if (!$email || !$secret || !$cui || !$use_stock) {
         return 0;
@@ -61,7 +62,17 @@ function _wp_oblio_sync(&$error = '') {
         
         $offset = 0;
         $limitPerPage = 250;
-        $model = new OblioSoftware\Products();
+        $service = new OblioSoftware\Products();
+        $ordersQty = [];
+        if ($oblio_stock_adjusments === 1) {
+            $ordersQty = $service->getOrdersQty([
+                'where' => [
+                    "p.`post_status` IN('wc-on-hold', 'wc-processing', 'wc-pending')",
+                    sprintf("p.post_date > '%s'", date('Y-m-d', time() - (3600 * 24 * 30))),
+                ]
+            ]);
+        }
+
         do {
             if ($offset > 0) {
                 usleep(500000);
@@ -74,14 +85,14 @@ function _wp_oblio_sync(&$error = '') {
             $index = 0;
             foreach ($products['data'] as $product) {
                 $index++;
-                $post = $model->find($product);
+                $post = $service->find($product);
                 if ($post && $getProductType($post) !== $product['productType']) {
                     continue;
                 }
                 if ($post) {
-                    $model->update($post->ID, $product);
+                    $service->update($post->ID, $product, $ordersQty);
                 } else {
-                    // $model->insert($product);
+                    // $service->insert($product, $ordersQty);
                 }
             }
             $offset += $limitPerPage; // next page

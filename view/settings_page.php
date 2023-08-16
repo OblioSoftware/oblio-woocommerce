@@ -232,15 +232,26 @@ Va multumim.", 'woocommerce-oblio'));
                 <th colspan="2"><h2>Sincronizare</h2></th>
             </tr>
             <tr valign="top" class="form-field">
-                <th scope="row">
-                    <?php esc_html_e('Sincronizare automata cu stocul Oblio', 'woocommerce-oblio'); ?><br>
-                    <small>Codul produsului din Oblio trebuie sa fie acelasi cu codul produsului din site-ul dvs.</small>
-                </th>
+                <th scope="row"><?php esc_html_e('Sincronizare automata cu stocul Oblio', 'woocommerce-oblio'); ?></th>
                 <td>
                     <?php 
-                    $oblio_stock_sync = get_option('oblio_stock_sync');
+                    $oblio_stock_sync = (int) get_option('oblio_stock_sync');
                     ?>
-                    <input type="checkbox" name="oblio_stock_sync"<?php echo $oblio_stock_sync == '1' ? ' checked' : ''; ?> value="1" />
+                    <input type="checkbox" name="oblio_stock_sync"<?php echo $oblio_stock_sync === 1 ? ' checked' : ''; ?> value="1" />
+                    <p class="description">Codul produsului din Oblio trebuie sa fie acelasi cu codul produsului din site-ul dvs.</p>
+                </td>
+            </tr>
+            <tr valign="top" class="form-field">
+                <th scope="row"><?php esc_html_e('Rezerva stoc comenzi', 'woocommerce-oblio'); ?></th>
+                <td>
+                    <?php 
+                    $oblio_stock_adjusments = (int) get_option('oblio_stock_adjusments');
+                    ?>
+                    <input type="checkbox" name="oblio_stock_adjusments"<?php echo $oblio_stock_adjusments === 1 ? ' checked' : ''; ?> value="1" />
+                    <p class="description">
+                        Stocul din magazin va fi stocul din Oblio minus comenzile din ultimele 30 de zile cu status "Plata in asteptare", "In asteptare" sau "In procesare". <br>
+                        Practic fara comenzile Nefacturate
+                    </p>
                 </td>
             </tr>
             <tr valign="top" class="form-field">

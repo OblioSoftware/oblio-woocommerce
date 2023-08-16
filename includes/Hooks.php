@@ -233,6 +233,7 @@ function _wp_register_oblio_plugin_settings() {
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_send_email_cc');
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_send_email_message');
     register_setting('oblio-plugin-settings-group', 'oblio_stock_sync');
+    register_setting('oblio-plugin-settings-group', 'oblio_stock_adjusments');
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_language');
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_measuring_unit');
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_measuring_unit_translation');

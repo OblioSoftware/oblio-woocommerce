@@ -38,9 +38,10 @@ class Products {
     /**
      *  Insert product
      *  @param array $data
+     *  @param array $ordersQty
      *  @return void
      */
-    public function insert($data) {
+    public function insert($data, $ordersQty = []) {
         if (empty($data['name']) || empty($data['price'])) {
             return;
         }
@@ -55,7 +56,10 @@ class Products {
         );
 
         // Create post
-        $post_id = wp_insert_post($post, $wp_error);
+        $post_id = wp_insert_post($post);
+        if ($post_id === 0) {
+            return;
+        }
         
         switch ((int) $data['vatPercentage']) {
             case  9: $_tax_class = 'reduced-rate'; break;
@@ -93,9 +97,10 @@ class Products {
      *  Update product
      *  @param int $product_id
      *  @param array $data
+     *  @param array $ordersQty
      *  @return void
      */
-    public function update($product_id, $data) {
+    public function update($product_id, $data, $ordersQty = []) {
         $post = $this->get($product_id);
 
         if ($post) {
@@ -134,7 +139,12 @@ class Products {
             
             $stock_quantity = isset($data['quantity']) ? floor($data['quantity'] / $package_number) : '';
             $stock_status   = isset($data['quantity']) && $data['quantity'] > 0 ? 'instock' : 'outofstock';
-            
+
+            // stock adjusments for orders
+            if (isset($ordersQty[$post_id])) {
+                $stock_quantity -= $ordersQty[$post_id];
+            }
+
             // update_post_meta($post_id, '_sku', isset($data['code']) ? $data['code'] : '');
             // update_post_meta($post_id, '_tax_class', $_tax_class);
             // update_post_meta($post_id, '_regular_price', $price * $package_number);
@@ -176,5 +186,36 @@ class Products {
      */
     public function delete($product_id) {
         wp_delete_post($product_id, true);
+    }
+
+    /**
+     * Retrive a list of product quantities from orders
+     * @param array $options
+     * @return array [product_id => quantity]
+     */
+    public function getOrdersQty($options = []) {
+        global $wpdb, $table_prefix;
+
+        $options['where'] = isset($options['where'])
+            ? ' AND ' . (is_array($options['where']) ? implode(' AND ', $options['where']) : $options['where'])
+            : '';
+
+        $sql = "SELECT p.ID, CONCAT('{', GROUP_CONCAT(CONCAT('\"', woim.meta_key, '\"', ':', '\"', woim.meta_value, '\"')), '}') AS info FROM `{$wpdb->posts}` p " .
+            "JOIN {$table_prefix}woocommerce_order_items woi ON(woi.order_id = p.ID AND woi.order_item_type = 'line_item') " . 
+            "JOIN {$table_prefix}woocommerce_order_itemmeta woim ON(woim.order_item_id = woi.order_item_id AND woim.meta_key IN('_product_id', '_qty', '_variation_id')) " . 
+            "WHERE p.`post_type` = 'shop_order' {$options['where']}
+            GROUP BY woi.order_item_id";
+
+        $products = [];
+        $result = $wpdb->get_results($sql);
+        foreach ($result as $item) {
+            $info = json_decode($item->info, true);
+            $item_id = intval($info['_variation_id']) === 0 ? $info['_product_id'] : $info['_variation_id'];
+            if (!isset($products[$item_id])) {
+                $products[$item_id] = 0;
+            }
+            $products[$item_id] += (int) $info['_qty'];
+        }
+        return $products;
     }
 }
