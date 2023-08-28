@@ -399,7 +399,16 @@ Va multumim.", 'woocommerce-oblio'));
                     <p class="description">In mod normal se aplica setarile din Oblio.eu</p>
                 </td>
             </tr>
-            
+            <tr valign="top" class="form-field">
+                <th scope="row"><?php esc_html_e('Ascunde detalii produs', 'woocommerce-oblio'); ?></th>
+                <td>
+                    <?php 
+                    $oblio_hide_description = get_option('oblio_hide_description');
+                    ?>
+                     <input type="checkbox" name="oblio_hide_description"<?php echo $oblio_hide_description == '1' ? ' checked' : ''; ?> value="1" />
+                    <p class="description">Optiune in cazul in care doriti sa ascundeti detaliile</p>
+                </td>
+            </tr>
         </table>
         
         <?php submit_button(); ?>

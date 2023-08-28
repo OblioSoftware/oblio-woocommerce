@@ -166,7 +166,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     
     $discount_in_product  = (int) get_option('oblio_invoice_discount_in_product');
     $vat_from_woocommerce = (bool) get_option('oblio_invoice_vat_from_woocommerce');
-    
+    $hide_description     = (bool) get_option('oblio_hide_description');
+
     if (empty($options['docType'])) {
         $options['docType'] = 'invoice';
     }
@@ -352,7 +353,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             $data['products'][] = [
                 'name'                      => $getProductName($item, $product),
                 'code'                      => $getProductSku($item, $product),
-                'description'               => _wp_oblio_get_product_description($item),
+                'description'               => $hide_description ? '&nbsp;' : _wp_oblio_get_product_description($item),
                 'price'                     => round($productPrice / $package_number, $data['precision'] + 2),
                 'measuringUnit'             => $measuringUnit,
                 'measuringUnitTranslation'  => $measuringUnitTranslation,
@@ -374,6 +375,9 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                         'discount'      => $discount,
                         'discountType'  => 'valoric',
                     ];
+                } else { // in case of stupid extensions
+                    $lastKey = array_key_last($data['products']);
+                    $data['products'][$lastKey]['price'] = round($price / $package_number, $data['precision'] + 2);
                 }
             }
         }
