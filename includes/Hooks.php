@@ -21,6 +21,7 @@ function _wp_oblio_payment_complete($order_id) {
 
 // ajax
 add_action('wp_ajax_oblio', '_wp_oblio_ajax_handler');
+add_action('wp_ajax_oblio_invoice', '_wp_oblio_invoice_ajax_handler');
 
 function _wp_oblio_ajax_handler() {
     $type       = isset($_POST['type']) ? $_POST['type'] : '';
@@ -69,6 +70,26 @@ function _wp_oblio_ajax_handler() {
         }
     } catch (Exception $e) {
         // do nothing
+    }
+    die(json_encode($result));
+}
+
+function _wp_oblio_invoice_ajax_handler() {
+    header('Content-Type: application/json');
+
+    $result = array();
+    $date = isset($_GET['date']) ? $_GET['date'] : '';
+
+    $order_id = $_GET['id'] ?? 0;
+
+    switch ($_GET['a']) {
+        case 'oblio-generate-invoice': $result = _wp_oblio_generate_invoice($order_id, ['date' => $date]); break; 
+        case 'oblio-generate-invoice-stock': $result = _wp_oblio_generate_invoice($order_id, ['use_stock' => true, 'date' => $date]); break;
+        case 'oblio-generate-proforma-stock': $result = _wp_oblio_generate_invoice($order_id, ['docType' => 'proforma', 'date' => $date]); break;
+        case 'oblio-view-invoice': die(_wp_oblio_generate_invoice($order_id, ['redirect' => true, 'date' => $date])); break; 
+        case 'oblio-view-proforma': die(_wp_oblio_generate_invoice($order_id, ['redirect' => true, 'docType' => 'proforma', 'date' => $date])); break; 
+        case 'oblio-delete-invoice': $result = _wp_oblio_delete_invoice($order_id); break;
+        case 'oblio-delete-proforma': $result = _wp_oblio_delete_invoice($order_id, ['docType' => 'proforma']); break;
     }
     die(json_encode($result));
 }
@@ -470,25 +491,10 @@ function _wp_oblio_order_details_box() {
         'oblio_order_details_box',
         'Facturare Oblio',
         '_wp_oblio_order_details_invoice_box',
-        'shop_order',
+        ['shop_order', 'woocommerce_page_wc-orders'],
         'side',
         'high'
     );
-    
-    if (isset($_GET['a'])) {
-        $result = array();
-        $date = isset($_GET['date']) ? $_GET['date'] : '';
-        switch ($_GET['a']) {
-            case 'oblio-generate-invoice': $result = _wp_oblio_generate_invoice($_GET['post'], ['date' => $date]); break; 
-            case 'oblio-generate-invoice-stock': $result = _wp_oblio_generate_invoice($_GET['post'], ['use_stock' => true, 'date' => $date]); break;
-            case 'oblio-generate-proforma-stock': $result = _wp_oblio_generate_invoice($_GET['post'], ['docType' => 'proforma', 'date' => $date]); break;
-            case 'oblio-view-invoice': die(_wp_oblio_generate_invoice($_GET['post'], ['redirect' => true, 'date' => $date])); break; 
-            case 'oblio-view-proforma': die(_wp_oblio_generate_invoice($_GET['post'], ['redirect' => true, 'docType' => 'proforma', 'date' => $date])); break; 
-            case 'oblio-delete-invoice': $result = _wp_oblio_delete_invoice($_GET['post']); break;
-            case 'oblio-delete-proforma': $result = _wp_oblio_delete_invoice($_GET['post'], ['docType' => 'proforma']); break;
-        }
-        die(json_encode($result));
-    }
 }
 
 function _wp_oblio_order_details_invoice_box($post) {

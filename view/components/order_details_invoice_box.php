@@ -36,7 +36,7 @@ $displayDocument = function($post, $options = []) use ($wpdb) {
     $lastInvoice = $wpdb->get_var($sql);
     if ($link) {
         echo sprintf('<p><a class="button" href="%s" target="_blank">%s</a></p>',
-            _wp_oblio_build_url('oblio-view-' . $options['docType'] . ''), sprintf(__('Vezi %s %s %d', 'woocommerce-oblio'), $options['name'], $series_name, $number));
+            _wp_oblio_build_url('oblio-view-' . $options['docType'], $post), sprintf(__('Vezi %s %s %d', 'woocommerce-oblio'), $options['name'], $series_name, $number));
         
         parse_str(parse_url($link, PHP_URL_QUERY), $output);
         $viewLink = 'https://www.oblio.eu/docs/preview/' . $options['docType'] . '/' . $output['id'];
@@ -44,16 +44,16 @@ $displayDocument = function($post, $options = []) use ($wpdb) {
             $viewLink, sprintf(__('Editeaza %s %s %d', 'woocommerce-oblio'), $options['name'], $series_name, $number));
     } else {
         echo sprintf('<p><a class="button oblio-generate-%s" href="%s" target="_blank">%s</a></p>', 
-            $options['docType'], _wp_oblio_build_url('oblio-generate-' . $options['docType'] . '-stock'), __('Emite ' . $options['name'], 'woocommerce-oblio'));
+            $options['docType'], _wp_oblio_build_url('oblio-generate-' . $options['docType'] . '-stock', $post), __('Emite ' . $options['name'], 'woocommerce-oblio'));
         if ($options['docType'] === 'invoice' && get_option('oblio_use_stock') === '1') {
             echo sprintf('<p><a class="button oblio-generate-%s" href="%s" target="_blank">%s</a></p>', 
-                $options['docType'], _wp_oblio_build_url('oblio-generate-' . $options['docType'] . ''), __('Emite ' . $options['name'] . ' fara Descarcare', 'woocommerce-oblio'));
+                $options['docType'], _wp_oblio_build_url('oblio-generate-' . $options['docType'], $post), __('Emite ' . $options['name'] . ' fara Descarcare', 'woocommerce-oblio'));
         }
     }
     if (!$link || $lastInvoice == $post->ID || $options['docType'] === 'proforma') {
         $hidden = $link ? '' : 'hidden';
         echo sprintf('<p><a class="button oblio-delete-' . $options['docType'] . ' %s" href="%s" target="_blank">%s</a></p>',
-            $hidden, _wp_oblio_build_url('oblio-delete-' . $options['docType']), __('Sterge ' . $options['name'], 'woocommerce-oblio'));
+            $hidden, _wp_oblio_build_url('oblio-delete-' . $options['docType'], $post), __('Sterge ' . $options['name'], 'woocommerce-oblio'));
     }
     if (isset($options['fn']) && is_callable($options['fn'])) {
         $options['fn']([

@@ -141,9 +141,8 @@ function _wp_oblio_delete_invoice($order_id, $options = []) {
     return $result;
 }
 
-function _wp_oblio_build_url($action) {
-    $action_url = add_query_arg('a', $action);
-    return esc_url($action_url);
+function _wp_oblio_build_url($action, $post) {
+    return get_home_url(null, 'wp-admin/admin-ajax.php?action=oblio_invoice&a=' . $action . '&id=' . $post->ID);
 }
 
 function _wp_oblio_generate_invoice($order_id, $options = array()) {
