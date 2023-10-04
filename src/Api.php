@@ -186,7 +186,7 @@ class Api {
             throw new Exception('Email or secret are empty!');
         }
         $request = new CurlWrapper();
-        $request->addOption(CURLOPT_SSL_VERIFYPEER, false);
+        $request->addOption(CURLOPT_SSL_VERIFYPEER, WP_OBLIO_SSL_VERIFYPEER);
         $request->post($this->_baseURL . '/api/authorize/token', array(
             'client_id'     => $this->_email,
             'client_secret' => $this->_secret,
@@ -203,7 +203,7 @@ class Api {
     protected function _getAuthorization() {
         $accessToken = $this->getAccessToken();
         $request = new CurlWrapper();
-        $request->addOption(CURLOPT_SSL_VERIFYPEER, false);
+        $request->addOption(CURLOPT_SSL_VERIFYPEER, WP_OBLIO_SSL_VERIFYPEER);
         $request->addHeader('Authorization', $accessToken->token_type . ' ' . $accessToken->access_token);
         return $request;
     }
