@@ -13,8 +13,8 @@
 define('OBLIO_VERSION', '[PLUGIN_VERSION]');
 define('OBLIO_AUTO_UPDATE', true);
 define('WP_OBLIO_FILE', __FILE__);
-define('WP_OBLIO_SSL_VERIFYPEER', false);
 define('WP_OBLIO_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
+define('WP_OBLIO_SSL_VERIFYPEER', WP_OBLIO_DIR . '/certs/cacert.pem');
 
 defined('ABSPATH') || exit;
 
