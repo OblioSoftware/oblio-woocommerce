@@ -526,8 +526,16 @@ function _wp_oblio_invoices_query_vars($vars) {
 
 add_filter('woocommerce_account_menu_items', '_wp_oblio_add_tab');
 
+/**
+ *  Add this stylesheet:
+ *  .woocommerce-MyAccount-navigation ul li.woocommerce-MyAccount-navigation-link--oblio-invoices a::before {
+ *     content: "\f570";
+ *  }
+ */
 function _wp_oblio_add_tab($items) {
+    $result = array_splice($items, count($items) - 1);
 	$items['oblio-invoices'] = 'Facturi';
+    $items = array_merge($items, $result);
 	return $items;
 }
 
