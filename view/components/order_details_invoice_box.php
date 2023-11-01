@@ -1,21 +1,23 @@
 
 <div class="oblio-ajax-response"></div>
 <?php
+use Automattic\WooCommerce\Internal\DataStores\Orders\OrdersTableDataStore;
+
+$order = new OblioSoftware\Order($post->ID);
 if ((int) get_option('oblio_gen_date') === 2) {
-    $order       = new WC_Order($post->ID);
     $date        = $order->get_date_created();
     $invoiceDate = $date ? $date->format('Y-m-d') : date('Y-m-d');
 } else {
     $invoiceDate = date('Y-m-d');
 }
 $invoiceDateClass = '';
-if (get_post_meta($post->ID, 'oblio_invoice_link', true)) {
+if ($order->get_data_info('oblio_invoice_link')) {
     $invoiceDateClass = 'hidden';
 }
 ?>
 <input type="date" id="oblio_invoice_date" class="<?php echo $invoiceDateClass; ?>" value="<?php echo $invoiceDate; ?>" />
 <?php
-$displayDocument = function($post, $options = []) use ($wpdb) {
+$displayDocument = function($post, $options = []) use ($wpdb, $order) {
     if (empty($options['docType'])) {
         $options['docType'] = 'invoice';
     }
@@ -28,11 +30,13 @@ $displayDocument = function($post, $options = []) use ($wpdb) {
     $number_key      = 'oblio_' . $options['docType'] . '_number';
     $link_key        = 'oblio_' . $options['docType'] . '_link';
     
-    $series_name = get_post_meta($post->ID, $series_name_key, true);
-    $number      = get_post_meta($post->ID, $number_key, true);
-    $link        = get_post_meta($post->ID, $link_key, true);
+    $series_name = $order->get_data_info($series_name_key);
+    $number      = $order->get_data_info($number_key);
+    $link        = $order->get_data_info($link_key);
     
-    $sql = "SELECT post_id FROM `{$wpdb->postmeta}` WHERE meta_key='{$number_key}' AND meta_value<>'' ORDER BY `meta_value` DESC LIMIT 1";
+    $order_meta_table = OblioSoftware\Order::get_meta_table_name();
+    $field_name = OblioSoftware\Order::get_meta_table_field_name();
+    $sql = "SELECT {$field_name} FROM `{$order_meta_table}` WHERE meta_key='{$number_key}' AND meta_value<>'' ORDER BY `meta_value` DESC LIMIT 1";
     $lastInvoice = $wpdb->get_var($sql);
     if ($link) {
         echo sprintf('<p><a class="button" href="%s" target="_blank">%s</a></p>',

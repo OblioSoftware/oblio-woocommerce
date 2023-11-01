@@ -8,6 +8,18 @@ add_action('init', '_oblio_init');
 function _oblio_init() {
     add_action('woocommerce_order_status_changed', '_wp_oblio_status_complete', 99, 3);
     add_action('woocommerce_payment_complete', '_wp_oblio_payment_complete');
+
+    // ajax
+    add_action('wp_ajax_oblio', '_wp_oblio_ajax_handler');
+    add_action('wp_ajax_oblio_invoice', '_wp_oblio_invoice_ajax_handler');
+
+    // rest api
+    add_action('rest_api_init', function () {
+        register_rest_route('oblio/v1', '/card/confirm', [
+            'methods' => 'POST',
+            'callback' => '_wp_oblio_card_confirm',
+        ]);
+    });
 }
 
 function _wp_oblio_payment_complete($order_id) {
@@ -19,9 +31,46 @@ function _wp_oblio_payment_complete($order_id) {
     }
 }
 
-// ajax
-add_action('wp_ajax_oblio', '_wp_oblio_ajax_handler');
-add_action('wp_ajax_oblio_invoice', '_wp_oblio_invoice_ajax_handler');
+function _wp_oblio_card_confirm(WP_REST_Request $request) {
+    $secret      = get_option('oblio_api_secret');
+    $code        = 400;
+    $body        = 'Bad request';
+
+    $query = $request->get_query_params();
+
+    if (($query['hash'] ?? '') === $secret && $secret !== '') {
+        $code   = 200;
+        $body   = base64_encode($request->get_header('x_oblio_request_id'));
+        $params = $request->get_json_params();
+        $data   = $params['data'];
+
+        $order = OblioSoftware\Order::get_order_by_proforma($data['seriesName'] ?? '', $data['number'] ?? '');
+        if ($order !== null) {
+            $invoiceSeriesName = esc_sql($data['invoicedBy']['seriesName'] ?? '');
+            $invoiceNumber     = esc_sql($data['invoicedBy']['number'] ?? '');
+            $invoiceLink       = esc_sql($data['invoicedBy']['link'] ?? '');
+            if ($invoiceSeriesName !== '' && $invoiceNumber !== '') {
+                try {
+                    wc_transaction_query('start');
+
+                    $order->set_data_info('oblio_invoice_series_name', $invoiceSeriesName);
+                    $order->set_data_info('oblio_invoice_number', $invoiceNumber);
+                    $order->set_data_info('oblio_invoice_link', $invoiceLink);
+                    $order->set_data_info('oblio_invoice_date', date('Y-m-d'));
+
+                    $order->set_status('completed');
+                    $order->save();
+
+                    wc_transaction_query('commit');
+                } catch (Exception $e) {
+                    wc_transaction_query('rollback');
+                }
+            }
+        }
+    }
+
+    return new WP_REST_Response($body, $code);
+}
 
 function _wp_oblio_ajax_handler() {
     $type       = isset($_POST['type']) ? $_POST['type'] : '';
@@ -194,9 +243,10 @@ function _wp_oblio_load_plugin() {
 
 add_action('woocommerce_thankyou', '_wp_oblio_new_order', 1000);
 function _wp_oblio_new_order($order_id) {
-    $series_name  = get_post_meta($order_id, 'oblio_invoice_series_name', true);
-    $number       = get_post_meta($order_id, 'oblio_invoice_number', true);
-    $link         = get_post_meta($order_id, 'oblio_invoice_link', true);
+    $order = new OblioSoftware\Order($order_id);
+    $series_name  = $order->get_data_info('oblio_invoice_series_name');
+    $number       = $order->get_data_info('oblio_invoice_number');
+    $link         = $order->get_data_info('oblio_invoice_link');
     if ($series_name || $number || $link) {
         return;
     }
@@ -224,7 +274,8 @@ function oblio_bulk_action_handler($redirect_to, $doaction, $post_ids) {
     $oblio_invoice_autogen_use_stock = (int) get_option('oblio_invoice_autogen_use_stock');
     sort($post_ids, SORT_NUMERIC);
     foreach ($post_ids as $post_id) {
-        $link = get_post_meta($post_id, 'oblio_invoice_link', true);
+        $order = new OblioSoftware\Order($post_id);
+        $link = $order->get_data_info('oblio_invoice_link');
         if (empty($link)) {
             $result = _wp_oblio_generate_invoice($post_id, ['use_stock' => $oblio_invoice_autogen_use_stock]);
         }
@@ -294,9 +345,10 @@ function _wp_oblio_add_invoice_column_content($column) {
     global $post;
     switch ($column) {
         case 'oblio_invoice':
-            $series_name = get_post_meta($post->ID, 'oblio_invoice_series_name', true);
-            $number      = get_post_meta($post->ID, 'oblio_invoice_number', true);
-            $link        = get_post_meta($post->ID, 'oblio_invoice_link', true);
+            $order       = new OblioSoftware\Order($post->ID);
+            $series_name = $order->get_data_info('oblio_invoice_series_name');
+            $number      = $order->get_data_info('oblio_invoice_number');
+            $link        = $order->get_data_info('oblio_invoice_link');
 
             if ($series_name && $number && $link) {
                 echo sprintf('<a href="%s" target="_blank">%s %s</a>', $link, $series_name, $number);

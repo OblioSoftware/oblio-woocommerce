@@ -390,16 +390,6 @@ Va multumim.", 'woocommerce-oblio'));
                 </td>
             </tr>
             <tr valign="top" class="form-field">
-                <th scope="row"><?php esc_html_e('Permite modulului Woocommerce sa calculeze cotele TVA', 'woocommerce-oblio'); ?></th>
-                <td>
-                    <?php 
-                    $oblio_invoice_vat_from_woocommerce = get_option('oblio_invoice_vat_from_woocommerce');
-                    ?>
-                    <input type="checkbox" name="oblio_invoice_vat_from_woocommerce"<?php echo $oblio_invoice_vat_from_woocommerce == '1' ? ' checked' : ''; ?> value="1" />
-                    <p class="description">In mod normal se aplica setarile din Oblio.eu</p>
-                </td>
-            </tr>
-            <tr valign="top" class="form-field">
                 <th scope="row"><?php esc_html_e('Ascunde detalii produs', 'woocommerce-oblio'); ?></th>
                 <td>
                     <?php 

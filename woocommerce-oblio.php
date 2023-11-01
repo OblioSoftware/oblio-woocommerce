@@ -95,8 +95,6 @@ function _wp_oblio_sync(&$error = '') {
 }
 
 function _wp_oblio_delete_invoice($order_id, $options = []) {
-    global $wpdb;
-    
     $order_id = (int) $order_id;
     if (!$order_id) {
         return array();
@@ -117,9 +115,10 @@ function _wp_oblio_delete_invoice($order_id, $options = []) {
     $number_key      = 'oblio_' . $options['docType'] . '_number';
     $link_key        = 'oblio_' . $options['docType'] . '_link';
     
-    $series_name = get_post_meta($order_id, $series_name_key, true);
-    $number      = get_post_meta($order_id, $number_key, true);
-    $link        = get_post_meta($order_id, $link_key, true);
+    $order       = new OblioSoftware\Order($order_id);
+    $series_name = $order->get_data_info($series_name_key);
+    $number      = $order->get_data_info($number_key);
+    $link        = $order->get_data_info($link_key);
     if ($link) {
         try {
             $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
@@ -127,9 +126,10 @@ function _wp_oblio_delete_invoice($order_id, $options = []) {
             $api->setCif($cui);
             $response = $api->delete($options['docType'], $series_name, $number);
             if ($response['status'] === 200) {
-                update_post_meta($order_id, $series_name_key, '');
-                update_post_meta($order_id, $number_key, '');
-                update_post_meta($order_id, $link_key, '');
+                $order->set_data_info($series_name_key, '');
+                $order->set_data_info($number_key, '');
+                $order->set_data_info($link_key, '');
+                $order->save();
                 $result['type'] = 'success';
                 $result['message'] = 'Factura a fost stearsa';
             }
@@ -137,13 +137,12 @@ function _wp_oblio_delete_invoice($order_id, $options = []) {
             $result['message'] = $e->getMessage();
         }
     }
-    $sql = "SELECT post_id FROM `{$wpdb->postmeta}` WHERE meta_key='{$number_key}' AND meta_value<>'' ORDER BY `meta_value` DESC LIMIT 1";
-    $result['lastInvoice'] = $wpdb->get_var($sql);
+    $result['lastInvoice'] = OblioSoftware\Order::get_last_invoiced_order_id($options['docType']);
     return $result;
 }
 
 function _wp_oblio_build_url($action, $post) {
-    return get_home_url(null, 'wp-admin/admin-ajax.php?action=oblio_invoice&a=' . $action . '&id=' . $post->ID);
+    return get_site_url(null, 'wp-admin/admin-ajax.php?action=oblio_invoice&a=' . $action . '&id=' . $post->ID);
 }
 
 function _wp_oblio_generate_invoice($order_id, $options = array()) {
@@ -164,9 +163,9 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     $gen_date     = (int) get_option('oblio_gen_date');
     $auto_collect = (int) get_option('oblio_auto_collect');
     
-    $discount_in_product  = (int) get_option('oblio_invoice_discount_in_product');
-    $vat_from_woocommerce = (bool) get_option('oblio_invoice_vat_from_woocommerce');
-    $hide_description     = (bool) get_option('oblio_hide_description');
+    $discount_in_product    = (int) get_option('oblio_invoice_discount_in_product');
+    $woocommerce_calc_taxes = get_option('woocommerce_calc_taxes') === 'yes';
+    $hide_description       = (bool) get_option('oblio_hide_description');
 
     if (empty($options['docType'])) {
         $options['docType'] = 'invoice';
@@ -180,22 +179,21 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     $link_key        = 'oblio_' . $options['docType'] . '_link';
     $date_key        = 'oblio_' . $options['docType'] . '_date';
     
-    $link = get_post_meta($order_id, $link_key, true);
+    $order = new OblioSoftware\Order($order_id);
+    $link = $order->get_data_info($link_key);
     if ($link) {
         if (!empty($options['redirect'])) {
             wp_redirect($link);
             die;
         }
         return [
-            'seriesName' => get_post_meta($order_id, $number_key, true),
-            'number'     => get_post_meta($order_id, $series_name_key, true),
+            'seriesName' => $order->get_data_info($number_key),
+            'number'     => $order->get_data_info($series_name_key),
             'link'       => $link,
         ];
     }
-    
-    $order       = new WC_Order($order_id);
-    $orderMeta   = get_post_meta($order_id);
-    $contact     = sprintf('%s %s', $orderMeta['_billing_first_name'][0]??'', $orderMeta['_billing_last_name'][0]??'');
+
+    $contact     = sprintf('%s %s', $order->get_billing_first_name(), $order->get_billing_last_name());
     if (!$email || !$secret || !$cui || !$series_name) {
         return array(
             'error' => 'Eroare configurare, intra la Oblio &gt; Setari'
@@ -224,14 +222,14 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
         '[payment]',
     );
     $haystack = array(
-        sprintf('#%d', isset($orderMeta['_order_number'][0]) ? $orderMeta['_order_number'][0] : $order_id),
+        sprintf('#%d', $order->get_order_number()),
         date('d.m.Y', $order->get_date_created()->format('U')),
-        $orderMeta['_payment_method_title'][0],
+        $order->get_payment_method_title(),
     );
     $collect = [];
     if ($auto_collect !== 0) {
-        $isCard = preg_match('/card/i', $orderMeta['_payment_method_title'][0] ?? '') ||
-            in_array($orderMeta['_payment_method'][0], ['stripe_cc', 'paylike', 'ipay', 'netopiapayments']);
+        $isCard = preg_match('/card/i', $order->get_payment_method_title()) ||
+            in_array($order->get_payment_method(), ['stripe_cc', 'paylike', 'ipay', 'netopiapayments']);
         if (($auto_collect === 1 && $isCard) || $auto_collect === 2) {
             $collect = [
                 'type'            => $isCard ? 'Card' : 'Ordin de plata',
@@ -245,18 +243,17 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     $data = array(
         'cif'                => $cui,
         'client'             => [
-            'cif'           => _wp_oblio_find_client_meta('cif', $orderMeta),
-            'name'          => empty($orderMeta['_billing_company'][0]) ? $contact : $orderMeta['_billing_company'][0],
-            'rc'            => _wp_oblio_find_client_meta('rc', $orderMeta),
-            'code'          => '',
-            'address'       => trim(($orderMeta['_billing_address_1'][0]??'') . ', ' . ($orderMeta['_billing_address_2'][0]??''), ', '),
-            'state'         => _wp_oblio_find_client_meta('billing_state', $orderMeta),
-            'city'          => $orderMeta['_billing_city'][0],
-            'country'       => _wp_oblio_find_client_meta('billing_country', $orderMeta),
-            'iban'          => '',
-            'bank'          => '',
-            'email'         => $orderMeta['_billing_email'][0],
-            'phone'         => $orderMeta['_billing_phone'][0],
+            'cif'           => _wp_oblio_find_client_data('cif', $order),
+            'name'          => trim($order->get_billing_company()) === '' ? $contact : trim($order->get_billing_company()),
+            'rc'            => _wp_oblio_find_client_data('rc', $order),
+            'address'       => trim($order->get_billing_address_1() . ', ' . $order->get_billing_address_2(), ', '),
+            'state'         => _wp_oblio_find_client_data('billing_state', $order),
+            'city'          => $order->get_billing_city(),
+            'country'       => _wp_oblio_find_client_data('billing_country', $order),
+            // 'iban'          => '',
+            // 'bank'          => '',
+            'email'         => $order->get_billing_email(),
+            'phone'         => $order->get_billing_phone(),
             'contact'       => $contact,
             'save'          => true,
         ],
@@ -315,7 +312,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
         };
 
         $normalRate = 19;
-        $vatIncluded = $orderMeta['_prices_include_tax'][0] === 'yes';
+        $vatIncluded = $order->get_prices_include_tax();
         
         $measuringUnit = get_option('oblio_invoice_measuring_unit') ? get_option('oblio_invoice_measuring_unit') : 'buc';
         $measuringUnitTranslation = $data['language'] == 'RO' ? '' : get_option('oblio_invoice_measuring_unit_translation', '');
@@ -358,8 +355,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                 'measuringUnit'             => $measuringUnit,
                 'measuringUnitTranslation'  => $measuringUnitTranslation,
                 'currency'                  => $currency,
-                'vatName'                   => $vat_from_woocommerce ? $vatName : '',
-                'vatPercentage'             => $vat_from_woocommerce ? $vatPercentage : null,
+                'vatName'                   => $woocommerce_calc_taxes ? $vatName : '',
+                'vatPercentage'             => $woocommerce_calc_taxes ? $vatPercentage : null,
                 'vatIncluded'               => true,
                 'quantity'                  => round($item['quantity'] * $package_number, $data['precision']),
                 'productType'               => _wp_oblio_get_product_type($item['product_id'], $product_type),
@@ -398,8 +395,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                 'measuringUnit'             => $measuringUnit,
                 'measuringUnitTranslation'  => $measuringUnitTranslation,
                 'currency'                  => $currency,
-                'vatName'                   => $vat_from_woocommerce ? $vatName : '',
-                'vatPercentage'             => $vat_from_woocommerce ? $vatPercentage : null,
+                'vatName'                   => $woocommerce_calc_taxes ? $vatName : '',
+                'vatPercentage'             => $woocommerce_calc_taxes ? $vatPercentage : null,
                 'vatIncluded'               => true,
                 'quantity'                  => 1,
                 'productType'               => 'Serviciu',
@@ -416,8 +413,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                 'measuringUnit'             => $measuringUnit,
                 'measuringUnitTranslation'  => $measuringUnitTranslation,
                 'currency'                  => $currency,
-                'vatName'                   => $vat_from_woocommerce ? $vatName : '',
-                'vatPercentage'             => $vat_from_woocommerce ? $vatPercentage : null,
+                'vatName'                   => $woocommerce_calc_taxes ? $vatName : '',
+                'vatPercentage'             => $woocommerce_calc_taxes ? $vatPercentage : null,
                 'vatIncluded'               => true,
                 'quantity'                  => 1,
                 'productType'               => 'Serviciu',
@@ -444,11 +441,11 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
         do_action('woocommerce_oblio_invoice_result', $result, $order_id, $options);
 
         if ($result['status'] == 200) {
-            update_post_meta($order_id, $series_name_key, $result['data']['seriesName']);
-            update_post_meta($order_id, $number_key, $result['data']['number']);
-            update_post_meta($order_id, $link_key, $result['data']['link']);
-            update_post_meta($order_id, $link_key, $result['data']['link']);
-            update_post_meta($order_id, $date_key, date('Y-m-d'));
+            $order->set_data_info($series_name_key, $result['data']['seriesName']);
+            $order->set_data_info($number_key, $result['data']['number']);
+            $order->set_data_info($link_key, $result['data']['link']);
+            $order->set_data_info($date_key, date('Y-m-d'));
+            $order->save();
             
             $oblio_invoice_gen_send_email = get_option('oblio_invoice_gen_send_email');
             if ($oblio_invoice_gen_send_email == '1') {
@@ -533,7 +530,8 @@ function _wp_oblio_find_meta($expression, $orderMeta) {
     return '';
 }
 
-function _wp_oblio_find_client_meta($type, $orderMeta) {
+function _wp_oblio_find_client_data($type, OblioSoftware\Order $order) {
+    $orderMeta = $order->get_data_info_array();
     $av_facturare = isset($orderMeta['av_facturare']) ? unserialize($orderMeta['av_facturare'][0]) : [];
     $curiero = isset($orderMeta['curiero_pf_pj_option']) ? unserialize($orderMeta['curiero_pf_pj_option'][0]) : [];
     switch ($type) {
@@ -547,7 +545,7 @@ function _wp_oblio_find_client_meta($type, $orderMeta) {
             if (isset($curiero['cui'])) {
                 return $curiero['cui'];
             }
-            $expression = '/(cif|cui|company\_details)$/';
+            $expression = '/(cif|cui|nif|company\_details)$/';
             break;
         case 'rc':
             if (isset($av_facturare['nr_reg_com'])) {
@@ -559,13 +557,13 @@ function _wp_oblio_find_client_meta($type, $orderMeta) {
             $expression = '/(regcom|reg\_com|rc)$/';
             break;
         case 'billing_state':
-            $countryCode = $orderMeta['_billing_country'][0];
-            $stateCode = $orderMeta['_billing_state'][0];
+            $countryCode = $order->get_billing_country();
+            $stateCode = $order->get_billing_state();
             $states = WC()->countries->get_states($countryCode);
             return isset($states[$stateCode]) ? $states[$stateCode] : $stateCode;
             break;
         case 'billing_country':
-            $countryCode = $orderMeta['_billing_country'][0];
+            $countryCode = $order->get_billing_country();
             $countries = WC()->countries->get_countries();
             return isset($countries[$countryCode]) ? $countries[$countryCode] : $countryCode;
             break;
@@ -584,9 +582,10 @@ function _wp_oblio_get_reference_document($order_id, $options = []) {
     }
     switch ($options['docType']) {
         case 'invoice':
-            $series_name  = get_post_meta($order_id, 'oblio_proforma_series_name', true);
-            $number       = get_post_meta($order_id, 'oblio_proforma_number', true);
-            $link         = get_post_meta($order_id, 'oblio_proforma_link', true);
+            $order        = new OblioSoftware\Order($order_id);
+            $series_name  = $order->get_data_info('oblio_proforma_series_name');
+            $number       = $order->get_data_info('oblio_proforma_number');
+            $link         = $order->get_data_info('oblio_proforma_link');
             if ($series_name && $number && $link) {
                 return [
                     'type'       => 'Proforma',
@@ -611,23 +610,22 @@ function _wp_oblio_send_email_invoice($order_id, $options = []) {
         default: $type = 'Factura';
     }
     
-    $order                              = new WC_Order($order_id);
-    $orderMeta                          = get_post_meta($order_id);
+    $order                              = new OblioSoftware\Order($order_id);
     $oblio_invoice_send_email_from      = get_option('oblio_invoice_send_email_from');
     $oblio_invoice_send_email_subject   = get_option('oblio_invoice_send_email_subject');
     $oblio_invoice_send_email_cc        = get_option('oblio_invoice_send_email_cc');
     $oblio_invoice_send_email_message   = nl2br(get_option('oblio_invoice_send_email_message'));
-    $series_name                        = get_post_meta($order_id, 'oblio_' . $options['docType'] . '_series_name', true);
-    $number                             = get_post_meta($order_id, 'oblio_' . $options['docType'] . '_number', true);
-    $link                               = get_post_meta($order_id, 'oblio_' . $options['docType'] . '_link', true);
+    $series_name                        = $order->get_data_info('oblio_' . $options['docType'] . '_series_name');
+    $number                             = $order->get_data_info('oblio_' . $options['docType'] . '_number');
+    $link                               = $order->get_data_info('oblio_' . $options['docType'] . '_link');
     if (!$series_name || !$number || !$link) {
         return;
     }
     
     $issueDate    = (int) $order->get_date_created()->format('U');
     $dueDays      = (int) get_option('oblio_invoice_due');
-    $contact      = sprintf('%s %s', $orderMeta['_billing_first_name'][0], $orderMeta['_billing_last_name'][0]);
-    $clientName   = empty($orderMeta['_billing_company'][0]) ? $contact : $orderMeta['_billing_company'][0];
+    $contact      = sprintf('%s %s', $order->get_billing_first_name(), $order->get_billing_last_name());
+    $clientName   = trim($order->get_billing_company()) === '' ? $contact : trim($order->get_billing_company());
     $needle = array(
         '[serie]',
         '[numar]',
@@ -653,7 +651,7 @@ function _wp_oblio_send_email_invoice($order_id, $options = []) {
     $subject = str_replace($needle, $haystack, $oblio_invoice_send_email_subject);
     $message = str_replace($needle, $haystack, $oblio_invoice_send_email_message);
     
-    $to = $orderMeta['_billing_email'][0];
+    $to = $order->get_billing_email();
     $headers = array('Content-Type: text/html; charset=UTF-8');
     if ($oblio_invoice_send_email_cc) {
         $headers[] = sprintf('CC: %1$s <%1$s>', $oblio_invoice_send_email_cc);
