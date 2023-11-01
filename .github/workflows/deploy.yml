@@ -41,9 +41,9 @@ jobs:
           JSON_TEMPLATE='{"version":"[PLUGIN_VERSION]",
           "url":"https://www.oblio.eu/",
           "download_url":"https://obliosoftware.github.io/builds/woocommerce/oblio-woocommerce.zip",
-          "requires":"5.0",
+          "requires":"6.3",
           "tested":"8.1.13",
-          "requires_php":"5.6",
+          "requires_php":"8.0",
           "last_updated":"[PLUGIN_LAST_UPDATE]",
           "sections":{
           "description":"Implementare API pentru oblio.eu",
