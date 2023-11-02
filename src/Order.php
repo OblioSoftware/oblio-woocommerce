@@ -9,7 +9,7 @@ class Order extends WC_Order {
     public function get_data_info($key_name) {
         $data = get_post_meta($this->id, $key_name, true);
 
-        if ($data === false && method_exists($this, 'get_meta')) {
+        if (empty($data) && method_exists($this, 'get_meta')) {
             return $this->get_meta($key_name);
         }
 
