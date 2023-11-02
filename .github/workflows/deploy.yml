@@ -43,7 +43,7 @@ jobs:
           "download_url":"https://obliosoftware.github.io/builds/woocommerce/oblio-woocommerce.zip",
           "requires":"6.3",
           "tested":"8.1.13",
-          "requires_php":"8.0",
+          "requires_php":"7.4",
           "last_updated":"[PLUGIN_LAST_UPDATE]",
           "sections":{
           "description":"Implementare API pentru oblio.eu",

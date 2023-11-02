@@ -532,8 +532,21 @@ function _wp_oblio_find_meta($expression, $orderMeta) {
 
 function _wp_oblio_find_client_data($type, OblioSoftware\Order $order) {
     $orderMeta = $order->get_data_info_array();
-    $av_facturare = isset($orderMeta['av_facturare']) ? unserialize($orderMeta['av_facturare'][0]) : [];
-    $curiero = isset($orderMeta['curiero_pf_pj_option']) ? unserialize($orderMeta['curiero_pf_pj_option'][0]) : [];
+
+    $av_facturare = isset($orderMeta['av_facturare'])
+        ? (is_string($orderMeta['av_facturare'][0]) ? unserialize($orderMeta['av_facturare'][0]) : $orderMeta['av_facturare'][0])
+        : [];
+
+    $curiero = [];
+    if (isset($orderMeta['curiero_pf_pj_option'])) {
+        if (isset($orderMeta['curiero_pf_pj_option'][0])) {
+            $curiero = is_string($orderMeta['curiero_pf_pj_option'][0])
+                ? unserialize($orderMeta['curiero_pf_pj_option'][0])
+                : $orderMeta['curiero_pf_pj_option'][0];
+        } else {
+            $curiero = $orderMeta['curiero_pf_pj_option'];
+        }
+    }
     switch ($type) {
         case 'cif':
             if (isset($av_facturare['cui'])) {

@@ -7,11 +7,13 @@ use Automattic\WooCommerce\Internal\DataStores\Orders\OrdersTableDataStore;
 
 class Order extends WC_Order {
     public function get_data_info($key_name) {
-        if (method_exists($this, 'get_meta')) {
+        $data = get_post_meta($this->id, $key_name, true);
+
+        if ($data === false && method_exists($this, 'get_meta')) {
             return $this->get_meta($key_name);
         }
 
-        return get_post_meta($this->id, $key_name, true);
+        return $data;
     }
 
     public function set_data_info($key_name, $value) {
@@ -32,6 +34,8 @@ class Order extends WC_Order {
             }
             $data[$tmp->key][] = $tmp->value;
         }
+
+        $data = array_merge($data, get_post_meta($this->id));
 
         return $data;
     }
