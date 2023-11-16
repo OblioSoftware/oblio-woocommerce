@@ -32,44 +32,47 @@ function _wp_oblio_payment_complete($order_id) {
 }
 
 function _wp_oblio_card_confirm(WP_REST_Request $request) {
-    $secret      = get_option('oblio_api_secret');
-    $code        = 400;
-    $body        = 'Bad request';
+    $hash = sha1(get_option('oblio_email'));
+    $code = 400;
+    $body = 'Bad request';
 
     $query = $request->get_query_params();
 
-    if (($query['hash'] ?? '') === $secret && $secret !== '') {
+    if (($query['hash'] ?? '') === $hash && $hash !== '') {
         $code   = 200;
         $body   = base64_encode($request->get_header('x_oblio_request_id'));
         $params = $request->get_json_params();
-        $data   = $params['data'];
+        $data   = $params['data'] ?? [];
 
         $order = OblioSoftware\Order::get_order_by_proforma($data['seriesName'] ?? '', $data['number'] ?? '');
         if ($order !== null) {
             $invoiceSeriesName = esc_sql($data['invoicedBy']['seriesName'] ?? '');
             $invoiceNumber     = esc_sql($data['invoicedBy']['number'] ?? '');
             $invoiceLink       = esc_sql($data['invoicedBy']['link'] ?? '');
-            if ($invoiceSeriesName !== '' && $invoiceNumber !== '') {
-                try {
-                    wc_transaction_query('start');
 
+            try {
+                wc_transaction_query('start');
+
+                if ($invoiceSeriesName !== '' && $invoiceNumber !== '') {
                     $order->set_data_info('oblio_invoice_series_name', $invoiceSeriesName);
                     $order->set_data_info('oblio_invoice_number', $invoiceNumber);
                     $order->set_data_info('oblio_invoice_link', $invoiceLink);
                     $order->set_data_info('oblio_invoice_date', date('Y-m-d'));
-
-                    $order->set_status('completed');
-                    $order->save();
-
-                    wc_transaction_query('commit');
-                } catch (Exception $e) {
-                    wc_transaction_query('rollback');
                 }
+
+                $order->set_status('completed');
+                $order->save();
+
+                wc_transaction_query('commit');
+            } catch (Exception $e) {
+                wc_transaction_query('rollback');
             }
         }
     }
 
-    return new WP_REST_Response($body, $code);
+    http_response_code($code);
+    header('Content-Type: text/html');
+    exit($body);
 }
 
 function _wp_oblio_ajax_handler() {
@@ -229,6 +232,8 @@ function _wp_oblio_load_plugin() {
     add_action('manage_shop_order_posts_custom_column', '_wp_oblio_add_invoice_column_content', 10);
     
     add_action('add_meta_boxes', '_wp_oblio_order_details_box');
+
+    add_action('update_option', '_wp_oblio_update_options', 10, 3);
     
     // cron sync
     $oblio_stock_sync = get_option('oblio_stock_sync');
@@ -238,6 +243,42 @@ function _wp_oblio_load_plugin() {
         }
     } else {
         wp_clear_scheduled_hook('oblio_sync_schedule');
+    }
+}
+
+function _wp_oblio_update_options($option_name, $old_value, $value) {
+    if ($option_name === 'oblio_webhook_card_complete') {
+        $email       = get_option('oblio_email');
+        $secret      = get_option('oblio_api_secret');
+        $cui         = get_option('oblio_cui');
+
+        try {
+            $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
+            $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
+
+            if (empty($value)) {
+                $response = $api->createRequest(
+                    new OblioSoftware\Api\Request\WebhookRead(null, [
+                        'cif'       => $cui,
+                        'topic'     => 'Card/Confirmed',
+                    ])
+                );
+                $id = $response['data'][0]['id'] ?? null;
+                if ($id !== null) {
+                    $api->createRequest(
+                        new OblioSoftware\Api\Request\WebhookDelete($id)
+                    );
+                }
+            } else {
+                $api->createRequest(
+                    new OblioSoftware\Api\Request\WebhookCreate([
+                        'cif'       => $cui,
+                        'topic'     => 'Card/Confirmed',
+                        'endpoint'  => get_site_url(null, 'wp-json/oblio/v1/card/confirm'),
+                    ])
+                );
+            }
+        } catch (Exception $e) {}
     }
 }
 
@@ -299,6 +340,7 @@ function _wp_register_oblio_plugin_settings() {
     register_setting('oblio-plugin-settings-group', 'oblio_proforma_autogen');
     register_setting('oblio-plugin-settings-group', 'oblio_gen_date');
     register_setting('oblio-plugin-settings-group', 'oblio_auto_collect');
+    register_setting('oblio-plugin-settings-group', 'oblio_webhook_card_complete');
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_gen_send_email');
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_send_email_from');
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_send_email_subject');

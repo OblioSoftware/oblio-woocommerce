@@ -151,6 +151,20 @@ class Api {
         }
         return $accessToken;
     }
+
+    public function createRequest(Api\RequestInterface $request): array
+    {
+        $client = $this->_getAuthorization();
+
+        $options = $request->getOptions();
+        if (!empty($options['json'])) {
+            $client->addHeader('Content-Type', 'application/json');
+            $client->prepareRawPayload(json_encode($options['json']));
+        }
+        $client->request($this->_baseURL .  '/' . $request->getUri(), $request->getMethod());
+        $this->_checkErrorResponse($client);
+        return json_decode($client->getResponse(), true);
+    }
     
     /** Protected methods */
     

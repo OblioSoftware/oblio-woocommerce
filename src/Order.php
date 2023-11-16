@@ -55,7 +55,7 @@ class Order extends WC_Order {
 
         $seriesName = esc_sql($seriesName);
         $number     = esc_sql($number);
-        $sql = "SELECT pma.{$field_name} FROM `{$order_meta_table}` pma " .
+        $sql = "SELECT pma.{$field_name} AS id FROM `{$order_meta_table}` pma " .
             "JOIN `{$order_meta_table}` pmb ON(pma.{$field_name}=pmb.{$field_name} AND pma.meta_key='oblio_proforma_series_name' AND pmb.meta_key='oblio_proforma_number') " .
             "WHERE pma.meta_value='{$seriesName}' AND pmb.meta_value='{$number}' " .
             "LIMIT 1";
@@ -63,7 +63,7 @@ class Order extends WC_Order {
         if ($result === null) {
             return null;
         }
-        return new self($result->post_id);
+        return new self($result->id);
     }
 
     public static function get_last_invoiced_order_id($type) {

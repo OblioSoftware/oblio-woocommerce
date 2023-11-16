@@ -639,7 +639,7 @@ class CurlWrapper
      *
      * @param string $data
      */
-    protected function prepareRawPayload($data)
+    public function prepareRawPayload($data)
     {
         $this->clearRequestParams();
         $this->addHeader('Content-Length', strlen($data));

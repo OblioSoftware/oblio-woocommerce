@@ -161,6 +161,16 @@
                 </td>
             </tr>
             <tr valign="top" class="form-field">
+                <th scope="row"><?php esc_html_e('Seteaza ca finalizata comanda platita prin Card', 'woocommerce-oblio'); ?></th>
+                <td>
+                    <?php 
+                    $oblio_webhook_card_complete = get_option('oblio_webhook_card_complete');
+                    ?>
+                    <input type="checkbox" name="oblio_webhook_card_complete"<?php echo intval($oblio_webhook_card_complete) === 1 ? ' checked' : ''; ?> value="1" />
+                    <p class="description">Seteaza ca finalizata comanda platita prin integrarea cu cardul din Oblio (Link pe factura/proforma)</p>
+                </td>
+            </tr>
+            <tr valign="top" class="form-field">
                 <th colspan="2"><h2>Email clienti</h2></th>
             </tr>
             <tr valign="top" class="form-field">
