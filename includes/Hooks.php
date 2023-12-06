@@ -7,7 +7,7 @@ add_action('oblio_sync_schedule', '_wp_oblio_sync');
 add_action('init', '_oblio_init');
 function _oblio_init() {
     // Load plugin textdomain.  
-    load_plugin_textdomain( 'woocommerce-oblio', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+    load_plugin_textdomain( 'woocommerce-oblio', false, WP_OBLIO_DIR . '/languages' );
 
     add_action('woocommerce_order_status_changed', '_wp_oblio_status_complete', 99, 3);
     add_action('woocommerce_payment_complete', '_wp_oblio_payment_complete');
