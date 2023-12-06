@@ -259,7 +259,7 @@ Va multumim.", 'woocommerce-oblio'));
                     ?>
                     <input type="checkbox" name="oblio_stock_adjusments"<?php echo $oblio_stock_adjusments === 1 ? ' checked' : ''; ?> value="1" />
                     <p class="description">
-                        <?php esc_html_e('Stocul din magazin va fi stocul din Oblio minus comenzile din ultimele 30 de zile cu status "Plata in asteptare", "In asteptare" sau "In procesare". <br>
+                        <?php _e('Stocul din magazin va fi stocul din Oblio minus comenzile din ultimele 30 de zile cu status "Plata in asteptare", "In asteptare" sau "In procesare". <br>
                         Practic fara comenzile Nefacturate', 'woocommerce-oblio'); ?>
                     </p>
                 </td>

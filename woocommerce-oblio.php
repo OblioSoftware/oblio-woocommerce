@@ -27,15 +27,6 @@ if (OBLIO_AUTO_UPDATE) {
     include WP_OBLIO_DIR . '/includes/Update.php';
 }
 
-add_action( 'init', 'wpdocs_load_textdomain' );
-
-/**
- * Load plugin textdomain.  
- */
-function wpdocs_load_textdomain() {
-    load_plugin_textdomain( 'woocommerce-oblio', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-}
-
 function _wp_oblio_sync(&$error = '') {
     $email        = get_option('oblio_email');
     $secret       = get_option('oblio_api_secret');
