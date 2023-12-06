@@ -142,8 +142,8 @@
                     $oblio_gen_date = get_option('oblio_gen_date');
                     ?>
                     <select name="oblio_gen_date" id="id_oblio_gen_date">
-                      <option value="1">Emiterii</option>
-                      <option value="2"<?php echo $oblio_gen_date == '2' ? ' selected' : ''; ?>>Comenzii</option>
+                      <option value="1"><?php esc_html_e('Emiterii', 'woocommerce-oblio'); ?></option>
+                      <option value="2"<?php echo $oblio_gen_date == '2' ? ' selected' : ''; ?>><?php esc_html_e('Comenzii', 'woocommerce-oblio'); ?></option>
                     </select>
                 </td>
             </tr>
@@ -154,9 +154,9 @@
                     $oblio_auto_collect = (int) get_option('oblio_auto_collect');
                     ?>
                     <select name="oblio_auto_collect" id="id_oblio_auto_collect">
-                      <option value="0">Nu</option>
-                      <option value="1"<?php echo $oblio_auto_collect === 1 ? ' selected' : ''; ?>>Platile prin card</option>
-                      <option value="2"<?php echo $oblio_auto_collect === 2 ? ' selected' : ''; ?>>Toate</option>
+                      <option value="0"><?php esc_html_e('Nu', 'woocommerce-oblio'); ?></option>
+                      <option value="1"<?php echo $oblio_auto_collect === 1 ? ' selected' : ''; ?>><?php esc_html_e('Platile prin card', 'woocommerce-oblio'); ?></option>
+                      <option value="2"<?php echo $oblio_auto_collect === 2 ? ' selected' : ''; ?>><?php esc_html_e('Toate', 'woocommerce-oblio'); ?></option>
                     </select>
                 </td>
             </tr>
@@ -167,11 +167,11 @@
                     $oblio_webhook_card_complete = get_option('oblio_webhook_card_complete');
                     ?>
                     <input type="checkbox" name="oblio_webhook_card_complete"<?php echo intval($oblio_webhook_card_complete) === 1 ? ' checked' : ''; ?> value="1" />
-                    <p class="description">Seteaza ca finalizata comanda platita prin integrarea cu cardul din Oblio (Link pe factura/proforma)</p>
+                    <p class="description"><?php esc_html_e('Seteaza ca finalizata comanda platita prin integrarea cu cardul din Oblio (Link pe factura/proforma)', 'woocommerce-oblio'); ?></p>
                 </td>
             </tr>
             <tr valign="top" class="form-field">
-                <th colspan="2"><h2>Email clienti</h2></th>
+                <th colspan="2"><h2><?php esc_html_e('Email clienti', 'woocommerce-oblio'); ?></h2></th>
             </tr>
             <tr valign="top" class="form-field">
                 <th scope="row"><?php esc_html_e('Trimite email la generare factura', 'woocommerce-oblio'); ?></th>
@@ -212,15 +212,15 @@
             <tr valign="top" class="form-field">
                 <th scope="row">
                   <?php esc_html_e('Mesaj email', 'woocommerce-oblio'); ?><br>
-                  <small>[type] = tip document</small><br>
-                  <small>[serie] = serie document</small><br>
-                  <small>[numar] = numar document</small><br>
-                  <small>[link] = link document</small><br>
-                  <small>[issue_date] = data emitere</small><br>
-                  <small>[due_date] = data scadenta</small><br>
-                  <small>[total] = total document</small><br>
-                  <small>[contact_name] = nume de contact</small><br>
-                  <small>[client_name] = nume de client</small><br>
+                  <small>[type] = <?php esc_html_e('tip document', 'woocommerce-oblio'); ?></small><br>
+                  <small>[serie] = <?php esc_html_e('serie document', 'woocommerce-oblio'); ?></small><br>
+                  <small>[numar] = <?php esc_html_e('numar document', 'woocommerce-oblio'); ?></small><br>
+                  <small>[link] = <?php esc_html_e('link document', 'woocommerce-oblio'); ?></small><br>
+                  <small>[issue_date] = <?php esc_html_e('data emitere', 'woocommerce-oblio'); ?></small><br>
+                  <small>[due_date] = <?php esc_html_e('data scadenta', 'woocommerce-oblio'); ?></small><br>
+                  <small>[total] = <?php esc_html_e('total document', 'woocommerce-oblio'); ?></small><br>
+                  <small>[contact_name] = <?php esc_html_e('nume de contact', 'woocommerce-oblio'); ?></small><br>
+                  <small>[client_name] = <?php esc_html_e('nume de client', 'woocommerce-oblio'); ?></small><br>
                 </th>
                 <td>
                     <?php 
@@ -239,7 +239,7 @@ Va multumim.", 'woocommerce-oblio'));
                 </td>
             </tr>
             <tr valign="top" class="form-field">
-                <th colspan="2"><h2>Sincronizare</h2></th>
+                <th colspan="2"><h2><?php esc_html_e('Sincronizare', 'woocommerce-oblio'); ?></h2></th>
             </tr>
             <tr valign="top" class="form-field">
                 <th scope="row"><?php esc_html_e('Sincronizare automata cu stocul Oblio', 'woocommerce-oblio'); ?></th>
@@ -248,7 +248,7 @@ Va multumim.", 'woocommerce-oblio'));
                     $oblio_stock_sync = (int) get_option('oblio_stock_sync');
                     ?>
                     <input type="checkbox" name="oblio_stock_sync"<?php echo $oblio_stock_sync === 1 ? ' checked' : ''; ?> value="1" />
-                    <p class="description">Codul produsului din Oblio trebuie sa fie acelasi cu codul produsului din site-ul dvs.</p>
+                    <p class="description"><?php esc_html_e('Codul produsului din Oblio trebuie sa fie acelasi cu codul produsului din site-ul dvs.', 'woocommerce-oblio'); ?></p>
                 </td>
             </tr>
             <tr valign="top" class="form-field">
@@ -259,13 +259,13 @@ Va multumim.", 'woocommerce-oblio'));
                     ?>
                     <input type="checkbox" name="oblio_stock_adjusments"<?php echo $oblio_stock_adjusments === 1 ? ' checked' : ''; ?> value="1" />
                     <p class="description">
-                        Stocul din magazin va fi stocul din Oblio minus comenzile din ultimele 30 de zile cu status "Plata in asteptare", "In asteptare" sau "In procesare". <br>
-                        Practic fara comenzile Nefacturate
+                        <?php esc_html_e('Stocul din magazin va fi stocul din Oblio minus comenzile din ultimele 30 de zile cu status "Plata in asteptare", "In asteptare" sau "In procesare". <br>
+                        Practic fara comenzile Nefacturate', 'woocommerce-oblio'); ?>
                     </p>
                 </td>
             </tr>
             <tr valign="top" class="form-field">
-                <th colspan="2"><h2>Optiuni factura</h2></th>
+                <th colspan="2"><h2><?php esc_html_e('Optiuni factura', 'woocommerce-oblio'); ?></h2></th>
             </tr>
             <tr valign="top" class="form-field">
                 <th scope="row"><?php esc_html_e('Limba', 'woocommerce-oblio'); ?></th>
@@ -379,9 +379,9 @@ Va multumim.", 'woocommerce-oblio'));
             <tr valign="top" class="form-field">
                 <th scope="row">
                   <?php esc_html_e('Mentiuni', 'woocommerce-oblio'); ?><br>
-                  <small>[order_id] = numar comanda</small><br>
-                  <small>[date] = data comanda</small><br>
-                  <small>[payment] = modalitate de plata</small><br>
+                  <small>[order_id] = <?php esc_html_e('numar comanda', 'woocommerce-oblio'); ?></small><br>
+                  <small>[date] = <?php esc_html_e('data comanda', 'woocommerce-oblio'); ?></small><br>
+                  <small>[payment] = <?php esc_html_e('modalitate de plata', 'woocommerce-oblio'); ?></small><br>
                 </th>
                 <td>
                     <?php 
@@ -406,7 +406,7 @@ Va multumim.", 'woocommerce-oblio'));
                     $oblio_hide_description = get_option('oblio_hide_description');
                     ?>
                      <input type="checkbox" name="oblio_hide_description"<?php echo $oblio_hide_description == '1' ? ' checked' : ''; ?> value="1" />
-                    <p class="description">Optiune in cazul in care doriti sa ascundeti detaliile</p>
+                    <p class="description"><?php esc_html_e('Optiune in cazul in care doriti sa ascundeti detaliile', 'woocommerce-oblio'); ?></p>
                 </td>
             </tr>
         </table>
