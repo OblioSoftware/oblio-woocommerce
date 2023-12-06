@@ -1,11 +1,11 @@
 <table cellspacing="0" class="display_meta">
     <tr>
-        <th>Comanda</th>
-        <th>Factura</th>
+        <th><?php esc_html_e('Comanda', 'woocommerce-oblio'); ?></th>
+        <th><?php esc_html_e('Factura', 'woocommerce-oblio'); ?></th>
     </tr>
     <?php if (count($invoices) === 0): ?>
         <tr>
-            <td colspan="2">Nu exista nici o factura</td>
+            <td colspan="2"><?php esc_html_e('Nu exista nici o factura', 'woocommerce-oblio'); ?></td>
         </tr>
     <?php else: ?>
     <?php foreach ($invoices as $invoice): ?>

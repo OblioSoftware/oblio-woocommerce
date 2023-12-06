@@ -150,7 +150,7 @@ function _wp_oblio_invoice_ajax_handler() {
 function _oblio_cfwc_create() {
     $args = array(
         'id'            => 'custom_package_number',
-        'label'         => __('Bucati pe pachet', 'cfwc'),
+        'label'         => __('Bucati pe pachet', 'woocommerce-oblio'),
         'class'         => 'cfwc-custom-field',
         // 'desc_tip'      => false,
         // 'description'   => __('Enter the title of your custom text field.', 'ctwc'),
@@ -159,7 +159,7 @@ function _oblio_cfwc_create() {
     
     $args = array(
         'id'            => 'custom_product_type',
-        'label'         => __('Tip produse', 'cfwc'),
+        'label'         => __('Tip produse', 'woocommerce-oblio'),
         'class'         => 'select short cfwc-custom-field',
         'options'       => ['' => 'Valoare implicita'] + _wp_oblio_get_products_type(),
         // 'desc_tip'      => false,
@@ -187,7 +187,7 @@ function _oblio_cfwc_create_variations($loop, $variation_data, $variation) {
         'id'            => 'cfwc_package_number[' . $loop . ']',
         'class'         => 'short',
         'wrapper_class' => 'form-row',
-        'label'         => __('Bucati pe pachet', 'woocommerce'),
+        'label'         => __('Bucati pe pachet', 'woocommerce-oblio'),
         'value'         => get_post_meta($variation->ID, 'cfwc_package_number', true)
     );
     woocommerce_wp_text_input($args);
@@ -213,10 +213,10 @@ function _wp_oblio_load_plugin() {
     
     // create new top-level menu
     add_menu_page('Oblio', 'Oblio', 'manage_options', 'oblio-plugin', null, plugins_url('/assets/images/icon.png', WP_OBLIO_FILE) );
-    add_submenu_page('oblio-plugin', 'Conectare', 'Conectare', 'manage_options', 'oblio-plugin', '_wp_oblio_login_page');
-    add_submenu_page('oblio-plugin', 'Setari Oblio', 'Setari', 'manage_options', 'oblio-settings', '_wp_oblio_settings_page');
-    add_submenu_page('oblio-plugin', 'Sincronizare Manuala', 'Sincronizare Manuala', 'manage_options', 'oblio-import', '_wp_oblio_import_page');
-    add_submenu_page('oblio-plugin', 'Ajutor', 'Ajutor', 'manage_options', 'oblio-help', '_wp_oblio_help');
+    add_submenu_page('oblio-plugin', __('Conectare', 'woocommerce-oblio'), __('Conectare', 'woocommerce-oblio'), 'manage_options', 'oblio-plugin', '_wp_oblio_login_page');
+    add_submenu_page('oblio-plugin', __('Setari Oblio', 'woocommerce-oblio'), __('Setari', 'woocommerce-oblio'), 'manage_options', 'oblio-settings', '_wp_oblio_settings_page');
+    add_submenu_page('oblio-plugin', __('Sincronizare Manuala', 'woocommerce-oblio'), __('Sincronizare Manuala', 'woocommerce-oblio'), 'manage_options', 'oblio-import', '_wp_oblio_import_page');
+    add_submenu_page('oblio-plugin', __('Ajutor', 'woocommerce-oblio'), __('Ajutor', 'woocommerce-oblio'), 'manage_options', 'oblio-help', '_wp_oblio_help');
 
     // call register settings function
     add_action('admin_init', '_wp_register_oblio_plugin_settings');
@@ -302,7 +302,7 @@ function _wp_oblio_new_order($order_id) {
 add_filter('bulk_actions-edit-shop_order', 'register_oblio_bulk_actions', 10);
 
 function register_oblio_bulk_actions($bulk_actions) {
-    $bulk_actions['oblio_bulk_action'] = __('Genereaza factura in Oblio', 'oblio_bulk_action');
+    $bulk_actions['oblio_bulk_action'] = __('Genereaza factura in Oblio', 'woocommerce-oblio');
     return $bulk_actions;
 }
 
@@ -415,7 +415,7 @@ function _wp_oblio_import_page() {
     $secret      = get_option('oblio_api_secret');
     
     if (!$email || !$secret) {
-        echo '<h1>Introdu Email si API Secret in sectiunea "Oblio"</h1>';
+        echo '<h1>'.__('Introdu Email si API Secret in sectiunea "Oblio"', 'woocommerce-oblio').'</h1>';
         return;
     }
     $message = '';
@@ -440,7 +440,7 @@ function _wp_oblio_settings_page() {
     $fields = [];
     
     if (!$email || !$secret) {
-        echo '<h1>Introdu Email si API Secret in sectiunea "Oblio"</h1>';
+        echo '<h1>'.__('Introdu Email si API Secret in sectiunea "Oblio"', 'woocommerce-oblio').'</h1>';
         return;
     }
     if (!$error) {
@@ -459,7 +459,7 @@ function _wp_oblio_settings_page() {
                 $fields = array(
                     array(
                         'type' => 'select',
-                        'label' => 'Companie',
+                        'label' => __('Companie', 'woocommerce-oblio'),
                         'name' => 'oblio_cui',
                         'options' => [
                             'query' => array_merge([['cif' => '', 'company' => 'Selecteaza']], $companies['data']),
@@ -509,7 +509,7 @@ function _wp_oblio_settings_page() {
                 
                 $fields[] = array(
                     'type' => 'select',
-                    'label' => 'Serie factura',
+                    'label' => __('Serie factura', 'woocommerce-oblio'),
                     'name' => 'oblio_series_name',
                     'options' => [
                         'query' => array_merge([['name' => 'Selecteaza']], $series),
@@ -522,7 +522,7 @@ function _wp_oblio_settings_page() {
                 );
                 $fields[] = array(
                     'type' => 'select',
-                    'label' => 'Serie proforma',
+                    'label' => __('Serie proforma', 'woocommerce-oblio'),
                     'name' => 'oblio_series_name_proforma',
                     'options' => [
                         'query' => array_merge([['name' => 'Selecteaza']], $series_proforma),
@@ -535,7 +535,7 @@ function _wp_oblio_settings_page() {
                 );
                 $fields[] = array(
                     'type' => 'select',
-                    'label' => 'Punct de lucru',
+                    'label' => __('Punct de lucru', 'woocommerce-oblio'),
                     'name' => 'oblio_workstation',
                     'options' => [
                         'query' => array_merge([['name' => 'Selecteaza']], $workStations),
@@ -548,7 +548,7 @@ function _wp_oblio_settings_page() {
                 );
                 $fields[] = array(
                     'type' => 'select',
-                    'label' => 'Gestiune',
+                    'label' => __('Gestiune', 'woocommerce-oblio'),
                     'name' => 'oblio_management',
                     'options' => [
                         'query' => array_merge([['name' => 'Selecteaza']], $management),
@@ -583,7 +583,7 @@ function _wp_oblio_settings_page() {
 function _wp_oblio_order_details_box() {
     add_meta_box(
         'oblio_order_details_box',
-        'Facturare Oblio',
+        __('Facturare Oblio', 'woocommerce-oblio'),
         '_wp_oblio_order_details_invoice_box',
         ['shop_order', 'woocommerce_page_wc-orders'],
         'side',

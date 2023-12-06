@@ -1,7 +1,7 @@
 <div class="wrap woocommerce">
     <h1><?php esc_html_e('Conectare cu Oblio', 'woocommerce-oblio'); ?></h1>
     
-    <p>Woocommerce se conecteaza cu Oblio folosind datele de conectare de mai jos:</p>
+    <p><?php esc_html_e('Woocommerce se conecteaza cu Oblio folosind datele de conectare de mai jos:', 'woocommerce-oblio'); ?></p>
 
     <form method="post" action="options.php">
         <?php settings_fields('oblio-plugin-login-group'); ?>
@@ -19,7 +19,7 @@
                 <th scope="row"><?php esc_html_e('API secret', 'woocommerce-oblio'); ?></th>
                 <td>
                     <input type="text" name="oblio_api_secret" value="<?php echo esc_attr(get_option('oblio_api_secret')); ?>" />
-                    <p class="description"><?php echo sprintf('API-ul secret poate fi gasit in <b>Oblio &gt; Contul meu &gt; Setari &gt; Date cont</b> sau %s', '<a href="https://www.oblio.eu/account/settings" target="_blank">direct de aici</a>'); ?></p>
+                    <p class="description"><?php echo sprintf(__('API-ul secret poate fi gasit in <b>Oblio &gt; Contul meu &gt; Setari &gt; Date cont</b> sau %s', 'woocommerce-oblio'), '<a href="https://www.oblio.eu/account/settings" target="_blank">direct de aici</a>'); ?></p>
                 </td>
             </tr>
         </table>
