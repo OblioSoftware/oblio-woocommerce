@@ -232,7 +232,9 @@ function _wp_oblio_load_plugin() {
         return;
     }
     
+    add_filter('manage_woocommerce_page_wc-orders_columns', '_wp_oblio_add_invoice_column', 10); // WC 7.1+
     add_filter('manage_edit-shop_order_columns', '_wp_oblio_add_invoice_column', 10);
+    add_action('manage_woocommerce_page_wc-orders_custom_column', '_wp_oblio_add_invoice_column_content', 10, 2); // WC 7.1+
     add_action('manage_shop_order_posts_custom_column', '_wp_oblio_add_invoice_column_content', 10);
     
     add_action('add_meta_boxes', '_wp_oblio_order_details_box');
@@ -304,6 +306,7 @@ function _wp_oblio_new_order($order_id) {
 
 // bulk options
 add_filter('bulk_actions-edit-shop_order', 'register_oblio_bulk_actions', 10);
+add_filter('bulk_actions-woocommerce_page_wc-orders', 'register_oblio_bulk_actions', 10); // WC 7.1+
 
 function register_oblio_bulk_actions($bulk_actions) {
     $bulk_actions['oblio_bulk_action'] = __('Genereaza factura in Oblio', 'woocommerce-oblio');
@@ -311,6 +314,7 @@ function register_oblio_bulk_actions($bulk_actions) {
 }
 
 add_filter('handle_bulk_actions-edit-shop_order', 'oblio_bulk_action_handler', 10, 3);
+add_filter('handle_bulk_actions-woocommerce_page_wc-orders', 'oblio_bulk_action_handler', 10, 3); // WC 7.1+
 
 function oblio_bulk_action_handler($redirect_to, $doaction, $post_ids) {
     if ($doaction !== 'oblio_bulk_action') {
@@ -387,11 +391,11 @@ function _wp_oblio_add_invoice_column($columns) {
     return $columns;
 }
 
-function _wp_oblio_add_invoice_column_content($column) {
+function _wp_oblio_add_invoice_column_content($column, $item) {
     global $post;
     switch ($column) {
         case 'oblio_invoice':
-            $order       = new OblioSoftware\Order($post->ID);
+            $order       = new OblioSoftware\Order(empty($post) ? $item->get_id() : $post->ID);
             $series_name = $order->get_data_info('oblio_invoice_series_name');
             $number      = $order->get_data_info('oblio_invoice_number');
             $link        = $order->get_data_info('oblio_invoice_link');
