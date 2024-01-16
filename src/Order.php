@@ -63,7 +63,7 @@ class Order extends WC_Order {
         if ($result === null) {
             return null;
         }
-        return new self($result->get_id());
+        return new self($result->id);
     }
 
     public static function get_last_invoiced_order_id($type) {

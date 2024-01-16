@@ -3,7 +3,7 @@
 <?php
 use Automattic\WooCommerce\Internal\DataStores\Orders\OrdersTableDataStore;
 
-$order = new OblioSoftware\Order($post->get_id());
+$order = new OblioSoftware\Order($post->ID);
 if ((int) get_option('oblio_gen_date') === 2) {
     $date        = $order->get_date_created();
     $invoiceDate = $date ? $date->format('Y-m-d') : date('Y-m-d');
@@ -54,7 +54,7 @@ $displayDocument = function($post, $options = []) use ($wpdb, $order) {
                 $options['docType'], _wp_oblio_build_url('oblio-generate-' . $options['docType'], $post), __('Emite ' . $options['name'] . ' fara Descarcare', 'woocommerce-oblio'));
         }
     }
-    if (!$link || $lastInvoice == $post->get_id() || $options['docType'] === 'proforma') {
+    if (!$link || $lastInvoice == $post->ID || $options['docType'] === 'proforma') {
         $hidden = $link ? '' : 'hidden';
         echo sprintf('<p><a class="button oblio-delete-' . $options['docType'] . ' %s" href="%s" target="_blank">%s</a></p>',
             $hidden, _wp_oblio_build_url('oblio-delete-' . $options['docType'], $post), __('Sterge ' . $options['name'], 'woocommerce-oblio'));
