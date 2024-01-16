@@ -6,8 +6,8 @@ add_action('oblio_sync_schedule', '_wp_oblio_sync');
 
 add_action('init', '_oblio_init');
 function _oblio_init() {
-    // Load plugin textdomain.  
-    load_plugin_textdomain( 'woocommerce-oblio', false, WP_OBLIO_DIR . '/languages' );
+    // Load plugin textdomain.
+    load_plugin_textdomain('woocommerce-oblio', false, WP_OBLIO_DIR . '/languages');
 
     add_action('woocommerce_order_status_changed', '_wp_oblio_status_complete', 99, 3);
     add_action('woocommerce_payment_complete', '_wp_oblio_payment_complete');
@@ -21,6 +21,7 @@ function _oblio_init() {
         register_rest_route('oblio/v1', '/card/confirm', [
             'methods' => 'POST',
             'callback' => '_wp_oblio_card_confirm',
+            'permission_callback' => '__return_true',
         ]);
     });
 }
@@ -34,8 +35,12 @@ function _wp_oblio_payment_complete($order_id) {
     }
 }
 
+function _wp_oblio_get_hash() {
+    return sha1(get_option('oblio_email'));
+}
+
 function _wp_oblio_card_confirm(WP_REST_Request $request) {
-    $hash = sha1(get_option('oblio_email'));
+    $hash = _wp_oblio_get_hash();
     $code = 400;
     $body = 'Bad request';
 
@@ -155,8 +160,6 @@ function _oblio_cfwc_create() {
         'id'            => 'custom_package_number',
         'label'         => __('Bucati pe pachet', 'woocommerce-oblio'),
         'class'         => 'cfwc-custom-field',
-        // 'desc_tip'      => false,
-        // 'description'   => __('Enter the title of your custom text field.', 'ctwc'),
     );
     woocommerce_wp_text_input($args);
     
@@ -165,8 +168,6 @@ function _oblio_cfwc_create() {
         'label'         => __('Tip produse', 'woocommerce-oblio'),
         'class'         => 'select short cfwc-custom-field',
         'options'       => ['' => 'Valoare implicita'] + _wp_oblio_get_products_type(),
-        // 'desc_tip'      => false,
-        // 'description'   => __('Enter the title of your custom text field.', 'ctwc'),
     );
     woocommerce_wp_select($args);
 }
@@ -277,7 +278,7 @@ function _wp_oblio_update_options($option_name, $old_value, $value) {
                     new OblioSoftware\Api\Request\WebhookCreate([
                         'cif'       => $cui,
                         'topic'     => 'Card/Confirmed',
-                        'endpoint'  => get_site_url(null, 'wp-json/oblio/v1/card/confirm'),
+                        'endpoint'  => get_site_url(null, 'wp-json/oblio/v1/card/confirm?hash=' . _wp_oblio_get_hash()),
                     ])
                 );
             }
@@ -631,7 +632,7 @@ add_filter('woocommerce_account_menu_items', '_wp_oblio_add_tab');
  */
 function _wp_oblio_add_tab($items) {
     $result = array_splice($items, count($items) - 1);
-	$items['oblio-invoices'] = 'Facturi';
+	$items['oblio-invoices'] = __('Facturi', 'woocommerce-oblio');
     $items = array_merge($items, $result);
 	return $items;
 }

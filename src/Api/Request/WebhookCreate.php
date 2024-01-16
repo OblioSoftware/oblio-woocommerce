@@ -5,7 +5,7 @@ namespace OblioSoftware\Api\Request;
 use OblioSoftware\Api\RequestInterface;
 
 class WebhookCreate implements RequestInterface {
-    private array $params;
+    private $params = [];
 
     public function __construct(array $params)
     {

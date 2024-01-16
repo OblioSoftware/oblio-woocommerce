@@ -5,10 +5,10 @@ namespace OblioSoftware\Api\Request;
 use OblioSoftware\Api\RequestInterface;
 
 class WebhookRead implements RequestInterface {
-    private ?int $id;
-    private array $params;
+    private $id = null;
+    private $params = [];
 
-    public function __construct(?int $id = null, array $params = [])
+    public function __construct($id = null, array $params = [])
     {
         $this->id = $id;
         $this->params = $params;

@@ -7,7 +7,7 @@ use Automattic\WooCommerce\Internal\DataStores\Orders\OrdersTableDataStore;
 
 class Order extends WC_Order {
     public function get_data_info($key_name) {
-        $data = get_post_meta($this->id, $key_name, true);
+        $data = get_post_meta($this->get_id(), $key_name, true);
 
         if (empty($data) && method_exists($this, 'get_meta')) {
             return $this->get_meta($key_name);
@@ -22,7 +22,7 @@ class Order extends WC_Order {
             return;
         }
 
-        update_post_meta($this->id, $key_name, $value);
+        update_post_meta($this->get_id(), $key_name, $value);
     }
 
     public function get_data_info_array() {
@@ -35,7 +35,7 @@ class Order extends WC_Order {
             $data[$tmp->key][] = $tmp->value;
         }
 
-        $data = array_merge($data, get_post_meta($this->id));
+        $data = array_merge($data, get_post_meta($this->get_id()));
 
         return $data;
     }
@@ -63,7 +63,7 @@ class Order extends WC_Order {
         if ($result === null) {
             return null;
         }
-        return new self($result->id);
+        return new self($result->get_id());
     }
 
     public static function get_last_invoiced_order_id($type) {

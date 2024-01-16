@@ -142,7 +142,7 @@ function _wp_oblio_delete_invoice($order_id, $options = []) {
 }
 
 function _wp_oblio_build_url($action, $post) {
-    return get_site_url(null, 'wp-admin/admin-ajax.php?action=oblio_invoice&a=' . $action . '&id=' . $post->ID);
+    return get_site_url(null, 'wp-admin/admin-ajax.php?action=oblio_invoice&a=' . $action . '&id=' . $post->get_id());
 }
 
 function _wp_oblio_generate_invoice($order_id, $options = array()) {
@@ -474,10 +474,12 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     }
 }
 
-function _wp_oblio_get_product_description($item) {
+function _wp_oblio_get_product_description(WC_Order_Item_Product $item) {
     if (!method_exists($item, 'get_all_formatted_meta_data')) {
         return '';
     }
+    $item_id = $item->get_id();
+    $product = $item->get_product();
     $hidden_order_itemmeta = apply_filters(
         'woocommerce_hidden_order_itemmeta',
         array(
@@ -497,6 +499,12 @@ function _wp_oblio_get_product_description($item) {
     );
 	$meta_data = $item->get_all_formatted_meta_data('');
     $description = '';
+
+    // the dumb way it's done in wordpress
+    ob_start();
+    do_action('woocommerce_before_order_itemmeta', $item_id, $item, $product);
+    $description .= strip_tags(ob_get_clean());
+
     foreach ($meta_data as $meta_id => $meta) {
         if (in_array($meta->key, $hidden_order_itemmeta, true)) {
             continue;
@@ -504,6 +512,11 @@ function _wp_oblio_get_product_description($item) {
 
         $description .= wp_kses_post($meta->display_key) . ': ' . wp_kses_post(force_balance_tags($meta->display_value));
     }
+
+    ob_start();
+    do_action('woocommerce_after_order_itemmeta', $item_id, $item, $product);
+    $description .= strip_tags(ob_get_clean());
+
     return $description;
 }
 

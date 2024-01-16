@@ -5,7 +5,7 @@ namespace OblioSoftware\Api\Request;
 use OblioSoftware\Api\RequestInterface;
 
 class WebhookDelete implements RequestInterface {
-    private int $id;
+    private $id = 0;
 
     public function __construct(int $id)
     {
