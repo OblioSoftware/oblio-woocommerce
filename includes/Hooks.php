@@ -391,7 +391,7 @@ function _wp_oblio_add_invoice_column($columns) {
     return $columns;
 }
 
-function _wp_oblio_add_invoice_column_content($column, $item) {
+function _wp_oblio_add_invoice_column_content($column, $item = null) {
     global $post;
     switch ($column) {
         case 'oblio_invoice':
