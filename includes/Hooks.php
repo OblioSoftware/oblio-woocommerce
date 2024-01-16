@@ -21,7 +21,7 @@ function _oblio_init() {
         register_rest_route('oblio/v1', '/card/confirm', [
             'methods' => 'POST',
             'callback' => '_wp_oblio_card_confirm',
-            'permission_callback' => '__return_true',
+            'permission_callback' => '__return_true'
         ]);
     });
 }
