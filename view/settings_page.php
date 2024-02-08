@@ -409,6 +409,16 @@ Va multumim.", 'woocommerce-oblio'));
                     <p class="description"><?php esc_html_e('Optiune in cazul in care doriti sa ascundeti detaliile', 'woocommerce-oblio'); ?></p>
                 </td>
             </tr>
+            <tr valign="top" class="form-field">
+                <th scope="row"><?php esc_html_e('Completeaza automat datele pentru companii', 'woocommerce-oblio'); ?></th>
+                <td>
+                    <?php 
+                    $oblio_autocomplete_company = get_option('oblio_autocomplete_company');
+                    ?>
+                     <input type="checkbox" name="oblio_autocomplete_company"<?php echo $oblio_autocomplete_company == '1' ? ' checked' : ''; ?> value="1" />
+                    <p class="description"><?php esc_html_e('Completeaza automat datele pentru companiile din Romania pe baza CIF-ului', 'woocommerce-oblio'); ?></p>
+                </td>
+            </tr>
         </table>
         
         <?php submit_button(); ?>

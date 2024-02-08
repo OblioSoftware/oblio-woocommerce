@@ -371,6 +371,7 @@ function _wp_register_oblio_plugin_settings() {
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_discount_in_product');
     register_setting('oblio-plugin-settings-group', 'oblio_invoice_vat_from_woocommerce');
     register_setting('oblio-plugin-settings-group', 'oblio_hide_description');
+    register_setting('oblio-plugin-settings-group', 'oblio_autocomplete_company');
 }
 
 function _wp_oblio_status_complete($order_id, $old_status, $new_status) {

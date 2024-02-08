@@ -257,6 +257,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             'phone'         => $order->get_billing_phone(),
             'contact'       => $contact,
             'save'          => true,
+            'autocomplete'  => get_option('oblio_autocomplete_company', 0),
         ],
         'issueDate'          => $issueDate,
         'dueDate'            => $dueDate,
