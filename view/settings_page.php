@@ -419,6 +419,16 @@ Va multumim.", 'woocommerce-oblio'));
                     <p class="description"><?php esc_html_e('Completeaza automat datele pentru companiile din Romania pe baza CIF-ului', 'woocommerce-oblio'); ?></p>
                 </td>
             </tr>
+            <tr valign="top" class="form-field">
+                <th scope="row"><?php esc_html_e('Dezactiveaza modifcarea pretul produsului in Oblio', 'woocommerce-oblio'); ?></th>
+                <td>
+                    <?php 
+                    $oblio_notsave_price = get_option('oblio_notsave_price');
+                    ?>
+                     <input type="checkbox" name="oblio_notsave_price"<?php echo $oblio_notsave_price == '1' ? ' checked' : ''; ?> value="1" />
+                    <p class="description"><?php esc_html_e('Dezactiveaza modifcarea pretul produsului in Oblio la generearea facturii', 'woocommerce-oblio'); ?></p>
+                </td>
+            </tr>
         </table>
         
         <?php submit_button(); ?>
