@@ -83,6 +83,10 @@ function _oblio_push_update($transient) {
     }
     
     if ($remote) {
+        $response = $remote ? json_decode($remote['body']) : null;
+        if (!is_array($transient->response)) {
+            $transient->response = [];
+        }
         // your installed plugin version should be on the line below! You can obtain it dynamically of course
         if ($response && version_compare(OBLIO_VERSION, $response->version, '<') && version_compare($response->requires, get_bloginfo('version'), '<')) {
             $res = new stdClass();
