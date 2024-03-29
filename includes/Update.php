@@ -90,6 +90,7 @@ function _oblio_push_update($transient) {
     
     if (!is_wp_error($remote)) {
         $response = json_decode($remote['body']);
+
         if (!is_array($transient->response)) {
             $transient->response = [];
         }
