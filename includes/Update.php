@@ -20,7 +20,9 @@ function _oblio_plugin_info($res, $action, $args) {
             )
         ));
 
-        set_transient('oblio_update', $remote, 43200); // 12 hours cache
+        if (!is_wp_error($remote)) {
+            set_transient('oblio_update', $remote, 43200); // 12 hours cache
+        }
     }
     
     if (!is_wp_error($remote) && isset($remote['response']['code']) && $remote['response']['code'] == 200 && !empty($remote['body'])) {
@@ -60,7 +62,7 @@ add_filter('site_transient_update_plugins', '_oblio_push_update', 1000);
 function _oblio_push_update($transient) {
     $plugin = 'woocommerce-oblio/woocommerce-oblio.php';
     $remote = get_transient('oblio_update');
-    $response = $remote ? json_decode($remote['body']) : null;
+    $response = is_wp_error($remote) ? new stdClass() : json_decode($remote['body']);
 
     if (
         !is_object($transient) ||
@@ -79,11 +81,15 @@ function _oblio_push_update($transient) {
             ))
         );
 
+        if (is_wp_error($remote)) {
+            return $transient;
+        }
+
         set_transient('oblio_update', $remote, 43200); // 12 hours cache
     }
     
-    if ($remote) {
-        $response = $remote ? json_decode($remote['body']) : null;
+    if (!is_wp_error($remote)) {
+        $response = json_decode($remote['body']);
         if (!is_array($transient->response)) {
             $transient->response = [];
         }
