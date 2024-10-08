@@ -98,7 +98,9 @@
                         foreach ($field['options']['query'] as $option) {
                             $isSelected = $option[$field['options']['id']] === $selectedOption;
                             echo sprintf('<option value="%s"%s%s>%s</option>',
-                                $option[$field['options']['id']], $isSelected ? ' selected' : '', $showData($option, $field['options']['data']), $option[$field['options']['name']]);
+                                $option[$field['options']['id']], $isSelected ? ' selected' : '',
+                                $showData($option, $field['options']['data'] ?? []),
+                                $option[$field['options']['name']]);
                         }
                     ?>
                     </select>

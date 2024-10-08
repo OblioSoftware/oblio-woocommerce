@@ -62,11 +62,11 @@ add_filter('site_transient_update_plugins', '_oblio_push_update', 1000);
 function _oblio_push_update($transient) {
     $plugin = 'woocommerce-oblio/woocommerce-oblio.php';
     $remote = get_transient('oblio_update');
-    $response = is_wp_error($remote) ? new stdClass() : json_decode($remote['body']);
+    $response = is_wp_error($remote) || !$remote ? new stdClass() : json_decode($remote['body']);
 
     if (
         !is_object($transient) ||
-        (!empty($transient->checked[$plugin]) && $transient->checked[$plugin] === $response->version) ||
+        (!empty($transient->checked[$plugin]) && property_exists($response, 'response') && $transient->checked[$plugin] === $response->version) ||
         OBLIO_VERSION === '[PLUGIN_VERSION]'
         ) {
         return $transient;
@@ -90,8 +90,12 @@ function _oblio_push_update($transient) {
     
     if (!is_wp_error($remote)) {
         $response = json_decode($remote['body']);
+        
+        if (!is_object($transient)) {
+            $transient = new stdClass();
+        }
 
-        if (!is_array($transient->response)) {
+        if (!property_exists($transient, 'response') || !is_array($transient->response)) {
             $transient->response = [];
         }
         // your installed plugin version should be on the line below! You can obtain it dynamically of course

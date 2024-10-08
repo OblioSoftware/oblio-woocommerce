@@ -285,6 +285,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     );
     
     if (empty($data['referenceDocument'])) {
+        /** @var \WC_Order_Item_Product[] */
         $order_items = $order->get_items();
         
         $getProductName = function($item, $product) {
@@ -296,6 +297,9 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                 if (!empty($variations['_sku'][0])) {
                     return $variations['_sku'][0];
                 }
+            }
+            if (!$product) {
+                return '';
             }
             return $product->get_sku();
         };
@@ -320,7 +324,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
         $measuringUnitTranslation = $data['language'] == 'RO' ? '' : get_option('oblio_invoice_measuring_unit_translation', '');
         $total = 0;
         foreach ($order_items as $item) {
-            $product = wc_get_product($item['product_id']);
+            $product = $item->get_product();
             $package_number = $getProductPackageNumber($item, $product);
             
             $vatName = '';
@@ -328,24 +332,13 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             
             if ($isTaxable) {
                 $vatPercentage = round($item['total_tax'] / $item['total'] * 100);
-                $factor = $vatIncluded ? 1 : (1 + $vatPercentage / 100);
             } else {
                 $vatName = 'SDD';
                 $vatPercentage = 0;
-                $factor = 1;
             }
-            $regular_price = $factor * ((float) $product->get_regular_price());
-            if ($item->get_variation_id() > 0) {
-                $product_variatons = new WC_Product_Variation($item->get_variation_id());
-                if ($product_variatons->exists()) {
-                    $regular_price = $factor * ((float) $product_variatons->get_regular_price());
-                }
-            }
-            if ($regular_price == 0) {
-                $regular_price = $factor * ((float) $product->get_price());
-            }
-            
-            $price = number_format(round($item['total'] + $item['total_tax'], 2) / $item['quantity'], 4, '.', '');
+
+            $regular_price = number_format(round($item->get_subtotal() + $item->get_subtotal_tax(), 2) / $item['quantity'], 4, '.', '');
+            $price = number_format(round($item->get_total() + $item->get_total_tax(), 2) / $item['quantity'], 4, '.', '');
             $productPrice = empty($discount_in_product) ? $regular_price : $price;
             $total += round($price * $item['quantity'], $data['precision'] + 2);
             
@@ -502,7 +495,7 @@ function _wp_oblio_get_product_description(WC_Order_Item_Product $item) {
 	$meta_data = $item->get_all_formatted_meta_data('');
     $description = '';
 
-    // the dumb way it's done in wordpress
+    // the dumb way it's done in wordpress 
     ob_start();
     do_action('woocommerce_before_order_itemmeta', $item_id, $item, $product);
     $description .= strip_tags(ob_get_clean());
