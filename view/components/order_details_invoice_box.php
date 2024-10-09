@@ -36,8 +36,13 @@ $displayDocument = function($post, $options = []) use ($wpdb, $order) {
     
     $order_meta_table = OblioSoftware\Order::get_meta_table_name();
     $field_name = OblioSoftware\Order::get_meta_table_field_name();
-    $sql = "SELECT {$field_name} FROM `{$order_meta_table}` WHERE meta_key='{$number_key}' AND meta_value<>'' ORDER BY `meta_value` DESC LIMIT 1";
-    $lastInvoice = $wpdb->get_var($sql);
+    $sql = "SELECT pmn.{$field_name} " . 
+		"FROM `{$order_meta_table}` pmn " . 
+		"JOIN `{$order_meta_table}` pms ON(pmn.post_id=pms.post_id AND pmn.meta_key='{$number_key}' AND pms.meta_key='{$series_name_key}') " . 
+		"WHERE pmn.meta_value<>'' AND pms.meta_value='{$series_name}' " . 
+		"ORDER BY pmn.`meta_value` DESC " . 
+		"LIMIT 1";
+    $lastInvoice = !$link ? null : $wpdb->get_var($sql);
     if ($link) {
         echo sprintf('<p><a class="button" href="%s" target="_blank">%s</a></p>',
             _wp_oblio_build_url('oblio-view-' . $options['docType'], $post), sprintf(__('Vezi %s %s %d', 'woocommerce-oblio'), $options['name'], $series_name, $number));
