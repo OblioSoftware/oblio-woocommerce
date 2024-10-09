@@ -75,7 +75,7 @@ $displayDocument = function($post, $options = []) use ($wpdb, $order) {
         var buttons = $('.oblio-generate-<?php echo $options['docType']; ?>'),
             deleteButton = $('.oblio-delete-<?php echo $options['docType']; ?>'),
             responseContainer = $('#oblio_order_details_box .oblio-ajax-response');
-        buttons.click(function(e) {
+        buttons.on('click', function(e) {
             var self = $(this);
             if (self.hasClass('disabled')) {
                 return false;
@@ -96,7 +96,7 @@ $displayDocument = function($post, $options = []) use ($wpdb, $order) {
                     if ('link' in response) {
                         buttons
                             .not(self)
-                            .hide()
+                            .hide();
                         self
                             .attr('href', response.link)
                             .removeClass('oblio-generate-<?php echo $options['docType']; ?>')
@@ -114,12 +114,12 @@ $displayDocument = function($post, $options = []) use ($wpdb, $order) {
                 }
             });
         });
-        deleteButton.click(function(e) {
+        deleteButton.on('click', function(e) {
+            e.preventDefault();
             var self = $(this);
             if (self.hasClass('disabled')) {
                 return false;
             }
-            e.preventDefault();
             self.addClass('disabled');
             jQuery.ajax({
                 dataType: 'json',

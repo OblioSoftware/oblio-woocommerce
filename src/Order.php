@@ -40,6 +40,14 @@ class Order extends WC_Order {
         return $data;
     }
 
+    public function select_for_update() {
+        global $wpdb;
+        $order_table = self::get_orders_table_name();
+        $id = (int) $this->get_id();
+        $sql = "SELECT id FROM `{$order_table}` WHERE id={$id} FOR UPDATE";
+        return $wpdb->get_row($sql);
+    }
+
     public static function get_order_by_proforma($seriesName, $number) {
         global $wpdb;
         if ($seriesName === '' || $number === '') {
@@ -80,6 +88,11 @@ class Order extends WC_Order {
     public static function get_meta_table_name() {
         global $wpdb;
         return self::custom_tables_enabled() ? OrdersTableDataStore::get_meta_table_name() : $wpdb->postmeta;
+    }
+
+    public static function get_orders_table_name() {
+        global $wpdb;
+        return self::custom_tables_enabled() ? OrdersTableDataStore::get_orders_table_name() : $wpdb->posts;
     }
 
     public static function get_meta_table_field_name() {

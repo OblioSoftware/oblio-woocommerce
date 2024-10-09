@@ -181,251 +181,271 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     $date_key        = 'oblio_' . $options['docType'] . '_date';
     
     $order = new OblioSoftware\Order($order_id);
-    $link = $order->get_data_info($link_key);
-    if ($link) {
-        if (!empty($options['redirect'])) {
-            wp_redirect($link);
-            die;
-        }
-        return [
-            'seriesName' => $order->get_data_info($number_key),
-            'number'     => $order->get_data_info($series_name_key),
-            'link'       => $link,
-        ];
-    }
 
-    $contact     = sprintf('%s %s', $order->get_billing_first_name(), $order->get_billing_last_name());
-    if (!$email || !$secret || !$cui || !$series_name) {
-        return array(
-            'error' => 'Eroare configurare, intra la Oblio &gt; Setari'
-        );
-    }
-    
-    $currency = substr($order->get_currency(), 0, 3);
-    if (strtolower($currency) === 'lei') {
-        $currency = 'RON';
-    }
-    
-    if (empty($use_stock)) {
-        $options['use_stock'] = 0;
-    }
-    if (!empty($options['date'])) {
-        $issueDate = $options['date'];
-    } else {
-        $issueDate = $gen_date === 2 ? $order->get_date_created()->format('Y-m-d') : date('Y-m-d');
-    }
-    $dueDays = (int) get_option('oblio_invoice_due');
-    $dueDate = $dueDays > 0 ? date('Y-m-d', strtotime($issueDate) + $dueDays * 3600 * 24) : '';
-    
-    $needle = array(
-        '[order_id]',
-        '[date]',
-        '[payment]',
-    );
-    $haystack = array(
-        sprintf('#%d', $order->get_order_number()),
-        date('d.m.Y', $order->get_date_created()->format('U')),
-        $order->get_payment_method_title(),
-    );
-    $collect = [];
-    if ($auto_collect !== 0) {
-        $isCard = preg_match('/card/i', $order->get_payment_method_title()) ||
-            in_array($order->get_payment_method(), ['stripe_cc', 'paylike', 'ipay', 'netopiapayments']);
-        if (($auto_collect === 1 && $isCard) || $auto_collect === 2) {
-            $collect = [
-                'type'            => $isCard ? 'Card' : 'Ordin de plata',
-                'documentNumber'  => '#' . $order_id,
-            ];
-        }
-    }
-    
-    $oblio_invoice_mentions = get_option('oblio_invoice_mentions');
-    $oblio_invoice_mentions = str_replace($needle, $haystack, $oblio_invoice_mentions);
-    $data = array(
-        'cif'                => $cui,
-        'client'             => [
-            'cif'           => _wp_oblio_find_client_data('cif', $order),
-            'name'          => trim($order->get_billing_company()) === '' ? $contact : trim($order->get_billing_company()),
-            'rc'            => _wp_oblio_find_client_data('rc', $order),
-            'address'       => trim($order->get_billing_address_1() . ', ' . $order->get_billing_address_2(), ', '),
-            'state'         => _wp_oblio_find_client_data('billing_state', $order),
-            'city'          => $order->get_billing_city(),
-            'country'       => _wp_oblio_find_client_data('billing_country', $order),
-            // 'iban'          => '',
-            // 'bank'          => '',
-            'email'         => $order->get_billing_email(),
-            'phone'         => $order->get_billing_phone(),
-            'contact'       => $contact,
-            'save'          => true,
-            'autocomplete'  => get_option('oblio_autocomplete_company', 0),
-        ],
-        'issueDate'          => $issueDate,
-        'dueDate'            => $dueDate,
-        'deliveryDate'       => '',
-        'collectDate'        => '',
-        'seriesName'         => $series_name,
-        'collect'            => $collect,
-        'referenceDocument'  => _wp_oblio_get_reference_document($order_id, $options),
-        'language'           => get_option('oblio_invoice_language') ? get_option('oblio_invoice_language') : 'RO',
-        'precision'          => get_option('woocommerce_price_num_decimals', 2),
-        'currency'           => $currency,
-        'products'           => [],
-        'issuerName'         => get_option('oblio_invoice_issuer_name'),
-        'issuerId'           => get_option('oblio_invoice_issuer_id'),
-        'noticeNumber'       => '',
-        'internalNote'       => '',
-        'deputyName'         => get_option('oblio_invoice_deputy_name'),
-        'deputyIdentityCard' => get_option('oblio_invoice_deputy_identity_card'),
-        'deputyAuto'         => get_option('oblio_invoice_deputy_auto'),
-        'selesAgent'         => get_option('oblio_invoice_seles_agent'),
-        'mentions'           => $oblio_invoice_mentions,
-        'value'              => 0,
-        'workStation'        => $workstation,
-        'useStock'           => empty($options['use_stock']) ? 0 : 1,
-    );
-    
-    if (empty($data['referenceDocument'])) {
-        /** @var \WC_Order_Item_Product[] */
-        $order_items = $order->get_items();
-        
-        $getProductName = function($item, $product) {
-            return $item['name'];
-        };
-        $getProductSku = function($item, $product) {
-            if ($item['variation_id'] > 0) {
-                $variations = get_post_meta($item['variation_id']);
-                if (!empty($variations['_sku'][0])) {
-                    return $variations['_sku'][0];
-                }
-            }
-            if (!$product) {
-                return '';
-            }
-            return $product->get_sku();
-        };
-        $getProductPackageNumber = function($item, $product) {
-            $package_number = (int) get_post_meta($item['product_id'], 'custom_package_number', true);
-            if ($item['variation_id'] > 0) {
-                $variations = get_post_meta($item['variation_id']);
-                if (!empty($variations['cfwc_package_number'][0])) {
-                    $package_number = (int) $variations['cfwc_package_number'][0];
-                }
-            }
-            if ($package_number === 0) { // not set
-                $package_number = 1;
-            }
-            return $package_number;
-        };
-
-        $normalRate = 19;
-        $vatIncluded = $order->get_prices_include_tax();
-        
-        $measuringUnit = get_option('oblio_invoice_measuring_unit') ? get_option('oblio_invoice_measuring_unit') : 'buc';
-        $measuringUnitTranslation = $data['language'] == 'RO' ? '' : get_option('oblio_invoice_measuring_unit_translation', '');
-        $total = 0;
-        foreach ($order_items as $item) {
-            $product = $item->get_product();
-            $package_number = $getProductPackageNumber($item, $product);
-            
-            $vatName = '';
-            $isTaxable = $item['total_tax'] > 0; // $item->get_tax_status() === 'taxable';
-            
-            if ($isTaxable) {
-                $vatPercentage = round($item['total_tax'] / $item['total'] * 100);
-            } else {
-                $vatName = 'SDD';
-                $vatPercentage = 0;
-            }
-
-            $regular_price = number_format(round($item->get_subtotal() + $item->get_subtotal_tax(), 2) / $item['quantity'], 4, '.', '');
-            $price = number_format(round($item->get_total() + $item->get_total_tax(), 2) / $item['quantity'], 4, '.', '');
-            $productPrice = empty($discount_in_product) ? $regular_price : $price;
-            $total += round($price * $item['quantity'], $data['precision'] + 2);
-            
-            $data['products'][] = [
-                'name'                      => $getProductName($item, $product),
-                'code'                      => $getProductSku($item, $product),
-                'description'               => $hide_description ? '&nbsp;' : _wp_oblio_get_product_description($item),
-                'price'                     => round($productPrice / $package_number, $data['precision'] + 2),
-                'measuringUnit'             => $measuringUnit,
-                'measuringUnitTranslation'  => $measuringUnitTranslation,
-                'currency'                  => $currency,
-                'vatName'                   => $woocommerce_calc_taxes ? $vatName : '',
-                'vatPercentage'             => $woocommerce_calc_taxes ? $vatPercentage : null,
-                'vatIncluded'               => true,
-                'quantity'                  => round($item['quantity'] * $package_number, $data['precision']),
-                'productType'               => _wp_oblio_get_product_type($item['product_id'], $product_type),
-                'management'                => $management,
-                'save'                      => intval(get_option('oblio_notsave_price', 0)) === 0
-            ];
-            if (empty($discount_in_product) && $price !== number_format($regular_price, 4, '.', '')) {
-                $discount = ($regular_price * $item['quantity']) - ($item['total'] + $item['total_tax']);
-                $discount = round($discount, $data['precision'], PHP_ROUND_HALF_DOWN);
-                if ($discount > 0) {
-                    $data['products'][] = [
-                        'name'          => sprintf('Discount "%s"', $getProductName($item, $product)),
-                        'discount'      => $discount,
-                        'discountType'  => 'valoric',
-                    ];
-                } else { // in case of stupid extensions
-                    $lastKey = array_key_last($data['products']);
-                    $data['products'][$lastKey]['price'] = round($price / $package_number, $data['precision'] + 2);
-                }
-            }
-        }
-        if ($order->get_shipping_total() > 0) {
-            $vatName = '';
-            if ($isTaxable) {
-                $vatPercentage = $order->get_shipping_tax() > 0 ? round($order->get_shipping_tax() / $order->get_shipping_total() * 100) : $normalRate;
-            } else {
-                $vatName = 'SDD';
-                $vatPercentage = 0;
-            }
-            $shipping = $order->get_shipping_total() + $order->get_shipping_tax();
-            $data['products'][] = [
-                'name'                      => 'Transport',
-                'code'                      => '',
-                'description'               => '',
-                'price'                     => $shipping,
-                'measuringUnit'             => $measuringUnit,
-                'measuringUnitTranslation'  => $measuringUnitTranslation,
-                'currency'                  => $currency,
-                'vatName'                   => $woocommerce_calc_taxes ? $vatName : '',
-                'vatPercentage'             => $woocommerce_calc_taxes ? $vatPercentage : null,
-                'vatIncluded'               => true,
-                'quantity'                  => 1,
-                'productType'               => 'Serviciu',
-            ];
-            $total += $shipping;
-        }
-        if (number_format($total, 2, '.', '') !== number_format($order->get_total(), 2, '.', '')) {
-            $difference = $order->get_total() - $total;
-            $data['products'][] = [
-                'name'                      => $difference > 0 ? 'Alte taxe' : 'Discount',
-                'code'                      => '',
-                'description'               => '',
-                'price'                     => number_format($difference, 2, '.', ''),
-                'measuringUnit'             => $measuringUnit,
-                'measuringUnitTranslation'  => $measuringUnitTranslation,
-                'currency'                  => $currency,
-                'vatName'                   => $woocommerce_calc_taxes ? $vatName : '',
-                'vatPercentage'             => $woocommerce_calc_taxes ? $vatPercentage : null,
-                'vatIncluded'               => true,
-                'quantity'                  => 1,
-                'productType'               => 'Serviciu',
-            ];
-        }
-        
-        if (number_format($total, 2, '.', '') === '0.00') {
-            return [
-                'error' => 'Comanda are valoare 0.00'
-            ];
-        }
-    }
-    
-    $data = apply_filters( 'woocommerce_oblio_invoice_data', $data, $order_id );
-    
     try {
+        wc_transaction_query('start');
+
+        $order->select_for_update();
+
+        $link = $order->get_data_info($link_key);
+        if ($link) {
+            if (!empty($options['redirect'])) {
+                wp_redirect($link);
+                die;
+            }
+            return [
+                'seriesName' => $order->get_data_info($number_key),
+                'number'     => $order->get_data_info($series_name_key),
+                'link'       => $link,
+            ];
+        }
+
+        $contact     = sprintf('%s %s', $order->get_billing_first_name(), $order->get_billing_last_name());
+        if (!$email || !$secret || !$cui || !$series_name) {
+            return array(
+                'error' => 'Eroare configurare, intra la Oblio &gt; Setari'
+            );
+        }
+        
+        $currency = substr($order->get_currency(), 0, 3);
+        if (strtolower($currency) === 'lei') {
+            $currency = 'RON';
+        }
+        
+        if (empty($use_stock)) {
+            $options['use_stock'] = 0;
+        }
+        if (!empty($options['date'])) {
+            $issueDate = $options['date'];
+        } else {
+            $issueDate = $gen_date === 2 ? $order->get_date_created()->format('Y-m-d') : date('Y-m-d');
+        }
+        $dueDays = (int) get_option('oblio_invoice_due');
+        $dueDate = $dueDays > 0 ? date('Y-m-d', strtotime($issueDate) + $dueDays * 3600 * 24) : '';
+        
+        $needle = array(
+            '[order_id]',
+            '[date]',
+            '[payment]',
+        );
+        $haystack = array(
+            sprintf('#%d', $order->get_order_number()),
+            date('d.m.Y', $order->get_date_created()->format('U')),
+            $order->get_payment_method_title(),
+        );
+        $collect = [];
+        if ($auto_collect !== 0) {
+            $isCard = preg_match('/card/i', $order->get_payment_method_title()) ||
+                in_array($order->get_payment_method(), ['stripe_cc', 'stripe', 'paylike', 'ipay', 'netopiapayments']);
+            if (($auto_collect === 1 && $isCard) || $auto_collect === 2) {
+                $collect = [
+                    'type'            => $isCard ? 'Card' : 'Ordin de plata',
+                    'documentNumber'  => '#' . $order_id,
+                ];
+            }
+        }
+        
+        $oblio_invoice_mentions = get_option('oblio_invoice_mentions');
+        $oblio_invoice_mentions = str_replace($needle, $haystack, $oblio_invoice_mentions);
+        $data = array(
+            'cif'                => $cui,
+            'client'             => [
+                'cif'           => _wp_oblio_find_client_data('cif', $order),
+                'name'          => trim($order->get_billing_company()) === '' ? $contact : trim($order->get_billing_company()),
+                'rc'            => _wp_oblio_find_client_data('rc', $order),
+                'address'       => trim($order->get_billing_address_1() . ', ' . $order->get_billing_address_2(), ', '),
+                'state'         => _wp_oblio_find_client_data('billing_state', $order),
+                'city'          => $order->get_billing_city(),
+                'country'       => _wp_oblio_find_client_data('billing_country', $order),
+                // 'iban'          => '',
+                // 'bank'          => '',
+                'email'         => $order->get_billing_email(),
+                'phone'         => $order->get_billing_phone(),
+                'contact'       => $contact,
+                'save'          => true,
+                'autocomplete'  => get_option('oblio_autocomplete_company', 0),
+            ],
+            'issueDate'          => $issueDate,
+            'dueDate'            => $dueDate,
+            'deliveryDate'       => '',
+            'collectDate'        => '',
+            'seriesName'         => $series_name,
+            'collect'            => $collect,
+            'referenceDocument'  => _wp_oblio_get_reference_document($order_id, $options),
+            'language'           => get_option('oblio_invoice_language') ? get_option('oblio_invoice_language') : 'RO',
+            'precision'          => get_option('woocommerce_price_num_decimals', 2),
+            'currency'           => $currency,
+            'products'           => [],
+            'issuerName'         => get_option('oblio_invoice_issuer_name'),
+            'issuerId'           => get_option('oblio_invoice_issuer_id'),
+            'noticeNumber'       => '',
+            'internalNote'       => '',
+            'deputyName'         => get_option('oblio_invoice_deputy_name'),
+            'deputyIdentityCard' => get_option('oblio_invoice_deputy_identity_card'),
+            'deputyAuto'         => get_option('oblio_invoice_deputy_auto'),
+            'selesAgent'         => get_option('oblio_invoice_seles_agent'),
+            'mentions'           => $oblio_invoice_mentions,
+            'value'              => 0,
+            'workStation'        => $workstation,
+            'useStock'           => empty($options['use_stock']) ? 0 : 1,
+        );
+        
+        if (empty($data['referenceDocument'])) {
+            /** @var \WC_Order_Item_Product[] */
+            $order_items = $order->get_items();
+            
+            $getProductName = function($item, $product) {
+                return $item['name'];
+            };
+            $getProductSku = function($item, $product) {
+                if ($item['variation_id'] > 0) {
+                    $variations = get_post_meta($item['variation_id']);
+                    if (!empty($variations['_sku'][0])) {
+                        return $variations['_sku'][0];
+                    }
+                }
+                if (!$product) {
+                    return '';
+                }
+                return $product->get_sku();
+            };
+            $getProductPackageNumber = function($item, $product) {
+                $package_number = (int) get_post_meta($item['product_id'], 'custom_package_number', true);
+                if ($item['variation_id'] > 0) {
+                    $variations = get_post_meta($item['variation_id']);
+                    if (!empty($variations['cfwc_package_number'][0])) {
+                        $package_number = (int) $variations['cfwc_package_number'][0];
+                    }
+                }
+                if ($package_number === 0) { // not set
+                    $package_number = 1;
+                }
+                return $package_number;
+            };
+
+            $normalRate = 19;
+            $vatIncluded = $order->get_prices_include_tax();
+            
+            $measuringUnit = get_option('oblio_invoice_measuring_unit') ? get_option('oblio_invoice_measuring_unit') : 'buc';
+            $measuringUnitTranslation = $data['language'] == 'RO' ? '' : get_option('oblio_invoice_measuring_unit_translation', '');
+            $total = 0;
+            foreach ($order_items as $item) {
+                $product = $item->get_product();
+                $package_number = $getProductPackageNumber($item, $product);
+                
+                $vatName = '';
+                $isTaxable = $item['total_tax'] > 0; // $item->get_tax_status() === 'taxable';
+                
+                if ($isTaxable) {
+                    $vatPercentage = round($item['total_tax'] / $item['total'] * 100);
+                } else {
+                    $vatName = 'SDD';
+                    $vatPercentage = 0;
+                }
+
+                $subtotal   = number_format(round($item->get_subtotal() + $item->get_subtotal_tax(), 2) / $item['quantity'], 4, '.', '');
+                $price      = number_format(round($item->get_total() + $item->get_total_tax(), 2) / $item['quantity'], 4, '.', '');
+                if ($subtotal === $price && !empty($product)) {
+                    $regular_price = $product->get_regular_price();
+                    if ($item->get_variation_id() > 0) {
+                        $product_variatons = new WC_Product_Variation($item->get_variation_id());
+                        if ($product_variatons->exists()) {
+                            $regular_price = $product_variatons->get_regular_price();
+                        }
+                    }
+                    if (number_format((float) $regular_price, 2) === '0.00') {
+                        $regular_price = $product->get_price();
+                    }
+                } else {
+                    $regular_price = $subtotal;
+                }
+
+                $productPrice = empty($discount_in_product) ? $regular_price : $price;
+                $total += round(floatval($price) * $item['quantity'], $data['precision'] + 2);
+                
+                $data['products'][] = [
+                    'name'                      => $getProductName($item, $product),
+                    'code'                      => $getProductSku($item, $product),
+                    'description'               => $hide_description ? '&nbsp;' : _wp_oblio_get_product_description($item),
+                    'price'                     => round(floatval($productPrice) / $package_number, $data['precision'] + 2),
+                    'measuringUnit'             => $measuringUnit,
+                    'measuringUnitTranslation'  => $measuringUnitTranslation,
+                    'currency'                  => $currency,
+                    'vatName'                   => $woocommerce_calc_taxes ? $vatName : '',
+                    'vatPercentage'             => $woocommerce_calc_taxes ? $vatPercentage : null,
+                    'vatIncluded'               => true,
+                    'quantity'                  => round($item['quantity'] * $package_number, $data['precision']),
+                    'productType'               => _wp_oblio_get_product_type($item['product_id'], $product_type),
+                    'management'                => $management,
+                    'save'                      => intval(get_option('oblio_notsave_price', 0)) === 0
+                ];
+                if (empty($discount_in_product) && $price !== number_format($regular_price, 4, '.', '')) {
+                    $discount = ($regular_price * $item['quantity']) - ($item['total'] + $item['total_tax']);
+                    $discount = round($discount, $data['precision'], PHP_ROUND_HALF_DOWN);
+                    if ($discount > 0) {
+                        $data['products'][] = [
+                            'name'          => sprintf('Discount "%s"', $getProductName($item, $product)),
+                            'discount'      => $discount,
+                            'discountType'  => 'valoric',
+                        ];
+                    } else { // in case of stupid extensions
+                        $lastKey = array_key_last($data['products']);
+                        $data['products'][$lastKey]['price'] = round($price / $package_number, $data['precision'] + 2);
+                    }
+                }
+            }
+            if ($order->get_shipping_total() > 0) {
+                $vatName = '';
+                if ($isTaxable) {
+                    $vatPercentage = $order->get_shipping_tax() > 0 ? round($order->get_shipping_tax() / $order->get_shipping_total() * 100) : $normalRate;
+                } else {
+                    $vatName = 'SDD';
+                    $vatPercentage = 0;
+                }
+                $shipping = $order->get_shipping_total() + $order->get_shipping_tax();
+                $data['products'][] = [
+                    'name'                      => 'Transport',
+                    'code'                      => '',
+                    'description'               => '',
+                    'price'                     => $shipping,
+                    'measuringUnit'             => $measuringUnit,
+                    'measuringUnitTranslation'  => $measuringUnitTranslation,
+                    'currency'                  => $currency,
+                    'vatName'                   => $woocommerce_calc_taxes ? $vatName : '',
+                    'vatPercentage'             => $woocommerce_calc_taxes ? $vatPercentage : null,
+                    'vatIncluded'               => true,
+                    'quantity'                  => 1,
+                    'productType'               => 'Serviciu',
+                ];
+                $total += $shipping;
+            }
+            if (number_format($total, 2, '.', '') !== number_format($order->get_total(), 2, '.', '')) {
+                $difference = $order->get_total() - $total;
+                $data['products'][] = [
+                    'name'                      => $difference > 0 ? 'Alte taxe' : 'Discount',
+                    'code'                      => '',
+                    'description'               => '',
+                    'price'                     => number_format($difference, 2, '.', ''),
+                    'measuringUnit'             => $measuringUnit,
+                    'measuringUnitTranslation'  => $measuringUnitTranslation,
+                    'currency'                  => $currency,
+                    'vatName'                   => $woocommerce_calc_taxes ? $vatName : '',
+                    'vatPercentage'             => $woocommerce_calc_taxes ? $vatPercentage : null,
+                    'vatIncluded'               => true,
+                    'quantity'                  => 1,
+                    'productType'               => 'Serviciu',
+                ];
+            }
+            
+            if (number_format($total, 2, '.', '') === '0.00') {
+                return [
+                    'error' => 'Comanda are valoare 0.00'
+                ];
+            }
+        }
+    
+        $data = apply_filters( 'woocommerce_oblio_invoice_data', $data, $order_id );
+
         $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
         $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
         switch ($options['docType']) {
@@ -441,9 +461,13 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             $order->set_data_info($link_key, $result['data']['link']);
             $order->set_data_info($date_key, date('Y-m-d'));
             $order->save();
-            
-            $oblio_invoice_gen_send_email = get_option('oblio_invoice_gen_send_email');
-            if ($oblio_invoice_gen_send_email == '1') {
+        }
+
+        wc_transaction_query('commit');
+
+        if ($result['status'] == 200) {
+            $oblio_invoice_gen_send_email = (int) get_option('oblio_invoice_gen_send_email');
+            if ($oblio_invoice_gen_send_email === 1) {
                 _wp_oblio_send_email_invoice($order_id, array(
                     'docType' => $options['docType']
                 ));
@@ -456,6 +480,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
         }
     } catch (Exception $e) {
         // error handle
+        wc_transaction_query('rollback');
         $message = $e->getMessage();
         if ($message === 'The access token provided is invalid') {
             $accessTokenHandler->clear();
