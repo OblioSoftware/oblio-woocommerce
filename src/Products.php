@@ -4,6 +4,7 @@ namespace OblioSoftware;
 
 use Exception;
 use WC_Product;
+use WP_Query;
 
 class Products {
     /**
@@ -13,15 +14,18 @@ class Products {
      */
     public function find($data) {
         $product_id = 0;
-        
+ 
         if ($data['code']) {
             $product_id = (int) wc_get_product_id_by_sku($data['code']);
         	return $product_id > 0 ? $this->get($product_id) : null;
         }
-		
-		$post = get_page_by_title($data['name'], OBJECT, 'product');
-		if ($post) {
-			return $post;
+
+        $query = new WP_Query([
+            'post_type' => 'product',
+            'title'     => $data['name'],
+        ]);
+		if (!empty($query->post)) {
+			return $query->post;
 		}
         return null;
     }
