@@ -60,7 +60,7 @@ jobs:
               PLUGIN_LAST_UPDATE=$NOW \
               node -e "const fs = require('fs'); let jsonString = fs.readFileSync(0).toString('utf-8'); \
                   jsonString = jsonString.replaceAll('[PLUGIN_VERSION]', process.env.PLUGIN_NEW_VERSION); \
-                  jsonString = jsonString.replaceAll('[COMMIT_MESSAGE]', process.env.COMMIT_MESSAGE); \
+                  jsonString = jsonString.replaceAll('[COMMIT_MESSAGE]', process.env.COMMIT_MESSAGE.replaceAll(/(?:\r\n|\r|\n)/g, '<br>')); \
                   jsonString = jsonString.replaceAll('[PLUGIN_LAST_UPDATE]', process.env.PLUGIN_LAST_UPDATE); \
                   const json = JSON.parse(jsonString); console.log(JSON.stringify(json, null, '  '));" > ./packaging/info.json
 
