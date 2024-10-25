@@ -652,20 +652,21 @@ function _wp_oblio_add_content() {
     $auth_id = get_current_user_id();
     $field_name = 'post_id';
     $order_table = $wpdb->posts;
-    $order_meta_table = OrdersTableDataStore::get_meta_table_name();
+    $order_meta_table = $wpdb->postmeta;
     $performance_tables_active = get_option('woocommerce_custom_orders_table_enabled');
     $clientCondition = "JOIN {$order_meta_table} pm ON(pm.{$field_name}=p.ID AND pm.meta_key='_customer_user' AND pm.meta_value={$auth_id}) ";
     if ($performance_tables_active === 'yes') {
         $field_name = 'order_id';
         $order_table = "{$wpdb->prefix}wc_orders";
+        $order_meta_table = OrdersTableDataStore::get_meta_table_name();
         $clientCondition = "WHERE p.customer_id={$auth_id} ";
     }
 
     $sql = "SELECT p.ID, pmol.meta_value AS link, pmos.meta_value AS series_name, pmon.meta_value AS number " .
         "FROM {$order_table} p " .
-        "JOIN {$order_meta_table} pmol ON(pmol.{$field_name}=p.ID AND pmol.meta_key='oblio_invoice_link' AND pmol.meta_value<>'') " .
+        "JOIN {$order_meta_table} pmol ON(pmol.{$field_name}=p.ID AND pmol.meta_key='oblio_invoice_link') " .
         "JOIN {$order_meta_table} pmon ON(pmon.{$field_name}=p.ID AND pmon.meta_key='oblio_invoice_number') " .
-        "JOIN {$order_meta_table} pmos ON(pmos.{$field_name}=p.ID AND pmos.meta_key='oblio_invoice_series_name') " .
+        "JOIN {$order_meta_table} pmos ON(pmos.{$field_name}=p.ID AND pmos.meta_key='oblio_invoice_series_name' AND pmol.meta_value<>'') " .
         $clientCondition;
     $invoices = $wpdb->get_results($sql);
     include WP_OBLIO_DIR . '/view/account_invoices_page.php';
