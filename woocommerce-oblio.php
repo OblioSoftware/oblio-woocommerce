@@ -321,6 +321,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
 
         $normalRate = 19;
         $vatIncluded = $order->get_prices_include_tax();
+
+        $price_decimals = wc_get_price_decimals();
         
         $measuringUnit = get_option('oblio_invoice_measuring_unit') ? get_option('oblio_invoice_measuring_unit') : 'buc';
         $measuringUnitTranslation = $data['language'] == 'RO' ? '' : get_option('oblio_invoice_measuring_unit_translation', '');
@@ -339,8 +341,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                 $vatPercentage = 0;
             }
 
-            $subtotal   = number_format(round($item->get_subtotal() + $item->get_subtotal_tax(), 2) / $item['quantity'], 4, '.', '');
-            $price      = number_format(round($item->get_total() + $item->get_total_tax(), 2) / $item['quantity'], 4, '.', '');
+            $subtotal   = number_format(round($item->get_subtotal() + $item->get_subtotal_tax(), $price_decimals) / $item['quantity'], 4, '.', '');
+            $price      = number_format(round($item->get_total() + $item->get_total_tax(), $price_decimals) / $item['quantity'], 4, '.', '');
             if ($subtotal === $price && !empty($product)) {
                 $regular_price = $product->get_regular_price();
                 if ($item->get_variation_id() > 0) {
