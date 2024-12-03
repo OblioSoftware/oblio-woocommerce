@@ -54,12 +54,8 @@ class Order extends WC_Order {
             return null;
         }
 
-        $field_name = 'post_id';
-        $order_meta_table = OrdersTableDataStore::get_meta_table_name();
-        $performance_tables_active = get_option('woocommerce_custom_orders_table_enabled');
-        if ($performance_tables_active === 'yes') {
-            $field_name = 'order_id';
-        }
+        $field_name = self::get_meta_table_field_name();
+        $order_meta_table = self::get_meta_table_name();
 
         $seriesName = esc_sql($seriesName);
         $number     = esc_sql($number);
