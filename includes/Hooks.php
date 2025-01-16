@@ -612,64 +612,48 @@ function _wp_oblio_help() {
     exit;
 }
 
-/**
- * Add account tab section
- */
 
-add_action('init', '_wp_oblio_register_invoices_endpoint');
-
-function _wp_oblio_register_invoices_endpoint() {
-	add_rewrite_endpoint('oblio-invoices', EP_ROOT | EP_PAGES);
-}
-
-add_filter('query_vars', '_wp_oblio_invoices_query_vars');
-
-function _wp_oblio_invoices_query_vars($vars) {
-	$vars[] = 'oblio-invoices';
-	return $vars;
-}
-
-add_filter('woocommerce_account_menu_items', '_wp_oblio_add_tab');
 
 /**
- *  Add this stylesheet:
- *  .woocommerce-MyAccount-navigation ul li.woocommerce-MyAccount-navigation-link--oblio-invoices a::before {
- *     content: "\f570";
- *  }
+ * Add account buttons in existing orders tab
  */
-function _wp_oblio_add_tab($items) {
-    $result = array_splice($items, count($items) - 1);
-	$items['oblio-invoices'] = __('Facturi', 'woocommerce-oblio');
-    $items = array_merge($items, $result);
-	return $items;
+
+// Add invoice link column to order list
+add_filter( 'woocommerce_my_account_my_orders_columns', 'add_invoice_column' );
+function add_invoice_column( $columns ) {
+	$new_columns = array();
+
+	foreach ( $columns as $key => $column ) {
+		if ( $key === 'order-actions' ) {
+			$new_columns['order-invoice'] = __( 'Facturi', 'oblio' );
+		}
+		$new_columns[ $key ] = $column;
+	}
+
+	return $new_columns;
 }
 
-add_action('woocommerce_account_oblio-invoices_endpoint', '_wp_oblio_add_content');
+// Populate invoice column content (if existing)
+add_action( 'woocommerce_my_account_my_orders_column_order-invoice', 'add_invoice_column_content' );
+function add_invoice_column_content( $order ) {
+	$invoice_link = get_post_meta( $order->get_id(), 'oblio_invoice_link', true );
 
-function _wp_oblio_add_content() {
-    global $wpdb;
+	if ( ! empty( $invoice_link ) ) {
+		echo '<a href="' . esc_url( $invoice_link ) . '" target="_blank" class="button invoice-button">' .
+		     __( 'Vezi factură', 'oblio' ) . '</a>';
+	}
+}
 
-    $auth_id = get_current_user_id();
+// Add invoice link to order details page (if existing)
+add_action( 'woocommerce_order_details_after_order_table', 'add_invoice_link_to_order_details' );
+function add_invoice_link_to_order_details( $order ) {
+	$invoice_link = get_post_meta( $order->get_id(), 'oblio_invoice_link', true );
 
-    $field_name = 'post_id';
-    $order_table = $wpdb->posts;
-    $order_meta_table = $wpdb->postmeta;
-    $clientCondition = "JOIN {$order_meta_table} pm ON(pm.{$field_name}=p.ID AND pm.meta_key='_customer_user' AND pm.meta_value={$auth_id}) ";
-
-    $performance_tables_active = get_option('woocommerce_custom_orders_table_enabled');
-    if ($performance_tables_active === 'yes') {
-        $field_name = 'order_id';
-        $order_table = OrdersTableDataStore::get_orders_table_name();
-        $order_meta_table = OrdersTableDataStore::get_meta_table_name();
-        $clientCondition = "WHERE p.customer_id={$auth_id} ";
-    }
-
-    $sql = "SELECT p.ID, pmol.meta_value AS link, pmos.meta_value AS series_name, pmon.meta_value AS number " .
-        "FROM {$order_table} p " .
-        "JOIN {$order_meta_table} pmol ON(pmol.{$field_name}=p.ID AND pmol.meta_key='oblio_invoice_link') " .
-        "JOIN {$order_meta_table} pmon ON(pmon.{$field_name}=p.ID AND pmon.meta_key='oblio_invoice_number') " .
-        "JOIN {$order_meta_table} pmos ON(pmos.{$field_name}=p.ID AND pmos.meta_key='oblio_invoice_series_name' AND pmol.meta_value<>'') " .
-        $clientCondition;
-    $invoices = $wpdb->get_results($sql);
-    include WP_OBLIO_DIR . '/view/account_invoices_page.php';
-} 
+	if ( ! empty( $invoice_link ) ) {
+		echo '<section class="woocommerce-order-invoice">';
+		echo '<h2 class="woocommerce-order-invoice__title">' . __( 'Facturi', 'oblio' ) . '</h2>';
+		echo '<p class="order-again"><a href="' . esc_url( $invoice_link ) . '" target="_blank" class="button">' .
+		     __( 'Vezi factură', 'oblio' ) . '</a></p>';
+		echo '</section>';
+	}
+}
