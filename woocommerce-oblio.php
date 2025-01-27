@@ -394,8 +394,10 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
         }
         if ($order->get_shipping_total() > 0) {
             $vatName = '';
+            $isTaxable = $order->get_shipping_tax() > 0;
+
             if ($isTaxable) {
-                $vatPercentage = $order->get_shipping_tax() > 0 ? round($order->get_shipping_tax() / $order->get_shipping_total() * 100) : $normalRate;
+                $vatPercentage = round($order->get_shipping_tax() / $order->get_shipping_total() * 100);
             } else {
                 $vatName = 'SDD';
                 $vatPercentage = 0;
