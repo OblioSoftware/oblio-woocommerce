@@ -419,6 +419,41 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             ];
             $total += $shipping;
         }
+
+
+	    if ($order->get_fees()) {
+		    foreach ($order->get_fees() as $fee) {
+			    $fee_total = $fee->get_total() + $fee->get_total_tax();
+			    if ($fee_total != 0) {
+				    $vatName = '';
+				    $isTaxable = $fee->get_total_tax() > 0;
+
+				    if ($isTaxable) {
+					    $vatPercentage = round($fee->get_total_tax() / $fee->get_total() * 100);
+				    } else {
+					    $vatName = 'SDD';
+					    $vatPercentage = 0;
+				    }
+
+				    $data['products'][] = [
+					    'name'                      => $fee->get_name(),
+					    'code'                      => '',
+					    'description'               => '',
+					    'price'                     => $fee_total,
+					    'measuringUnit'             => $measuringUnit,
+					    'measuringUnitTranslation'  => $measuringUnitTranslation,
+					    'currency'                  => $currency,
+					    'vatName'                   => $woocommerce_calc_taxes ? $vatName : '',
+					    'vatPercentage'             => $woocommerce_calc_taxes ? $vatPercentage : null,
+					    'vatIncluded'               => true,
+					    'quantity'                  => 1,
+					    'productType'               => 'Serviciu',
+				    ];
+				    $total += $fee_total;
+			    }
+		    }
+	    }
+	    
         if (number_format($total, 2, '.', '') !== number_format($order->get_total(), 2, '.', '')) {
             $difference = $order->get_total() - $total;
             $data['products'][] = [
