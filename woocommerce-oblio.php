@@ -27,71 +27,73 @@ if (OBLIO_AUTO_UPDATE) {
     include WP_OBLIO_DIR . '/includes/Update.php';
 }
 
-function _wp_oblio_sync(&$error = '') {
-    $email        = get_option('oblio_email');
-    $secret       = get_option('oblio_api_secret');
-    $cui          = get_option('oblio_cui');
-    $use_stock    = get_option('oblio_use_stock');
-    $workstation  = get_option('oblio_workstation');
-    $management   = get_option('oblio_management');
-    $product_type = get_option('oblio_product_type');
-    $oblio_stock_adjusments = (int) get_option('oblio_stock_adjusments');
-    
-    if (!$email || !$secret || !$cui || !$use_stock) {
-        return 0;
-    }
-
-    $total = 0;
-    try {
-        $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
-        $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
-        $api->setCif($cui);
+if (!function_exists('_wp_oblio_sync')) {
+    function _wp_oblio_sync(&$error = '') {
+        $email        = get_option('oblio_email');
+        $secret       = get_option('oblio_api_secret');
+        $cui          = get_option('oblio_cui');
+        $use_stock    = get_option('oblio_use_stock');
+        $workstation  = get_option('oblio_workstation');
+        $management   = get_option('oblio_management');
+        $product_type = get_option('oblio_product_type');
+        $oblio_stock_adjusments = (int) get_option('oblio_stock_adjusments');
         
-        $offset = 0;
-        $limitPerPage = 250;
-        $service = new OblioSoftware\Products();
-        $ordersQty = [];
-        if ($oblio_stock_adjusments === 1) {
-            $ordersQty = $service->getOrdersQty([
-                'where' => [
-                    "p.`post_status` IN('wc-on-hold', 'wc-processing', 'wc-pending')",
-                    sprintf("p.post_date > '%s'", date('Y-m-d', time() - (3600 * 24 * 30))),
-                ]
-            ]);
+        if (!$email || !$secret || !$cui || !$use_stock) {
+            return 0;
         }
-
-        do {
-            if ($offset > 0) {
-                usleep(500000);
+    
+        $total = 0;
+        try {
+            $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
+            $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
+            $api->setCif($cui);
+            
+            $offset = 0;
+            $limitPerPage = 250;
+            $service = new OblioSoftware\Products();
+            $ordersQty = [];
+            if ($oblio_stock_adjusments === 1) {
+                $ordersQty = $service->getOrdersQty([
+                    'where' => [
+                        "p.`post_status` IN('wc-on-hold', 'wc-processing', 'wc-pending')",
+                        sprintf("p.post_date > '%s'", date('Y-m-d', time() - (3600 * 24 * 30))),
+                    ]
+                ]);
             }
-            $products = $api->nomenclature('products', null, [
-                'workStation' => $workstation,
-                'management'  => $management,
-                'offset'      => $offset,
-            ]);
-            $index = 0;
-            foreach ($products['data'] as $product) {
-                $index++;
-                $post = $service->find($product);
-                if ($post && _wp_oblio_get_product_type($post->ID, $product_type) !== $product['productType']) {
-                    continue;
+    
+            do {
+                if ($offset > 0) {
+                    usleep(500000);
                 }
-                if ($post) {
-                    $service->update($post->ID, $product, $ordersQty);
-                } else {
-                    // $service->insert($product, $ordersQty);
+                $products = $api->nomenclature('products', null, [
+                    'workStation' => $workstation,
+                    'management'  => $management,
+                    'offset'      => $offset,
+                ]);
+                $index = 0;
+                foreach ($products['data'] as $product) {
+                    $index++;
+                    $post = $service->find($product);
+                    if ($post && _wp_oblio_get_product_type($post->ID, $product_type) !== $product['productType']) {
+                        continue;
+                    }
+                    if ($post) {
+                        $service->update($post->ID, $product, $ordersQty);
+                    } else {
+                        // $service->insert($product, $ordersQty);
+                    }
                 }
-            }
-            $offset += $limitPerPage; // next page
-        } while ($index === $limitPerPage);
-        $total = $offset - $limitPerPage + $index;
-        wc_update_product_lookup_tables_column('stock_quantity');
-        wc_update_product_lookup_tables_column('stock_status');
-    } catch (Exception $e) {
-        $error = $e->getMessage();
-        $accessTokenHandler->clear();
+                $offset += $limitPerPage; // next page
+            } while ($index === $limitPerPage);
+            $total = $offset - $limitPerPage + $index;
+            wc_update_product_lookup_tables_column('stock_quantity');
+            wc_update_product_lookup_tables_column('stock_status');
+        } catch (Exception $e) {
+            $error = $e->getMessage();
+            $accessTokenHandler->clear();
+        }
+        return $total;
     }
-    return $total;
 }
 
 function _wp_oblio_delete_invoice($order_id, $options = []) {
