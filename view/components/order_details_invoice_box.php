@@ -30,18 +30,29 @@ $displayDocument = function($post, $options = []) use ($wpdb, $order) {
     $number_key      = 'oblio_' . $options['docType'] . '_number';
     $link_key        = 'oblio_' . $options['docType'] . '_link';
     
-    $series_name = $order->get_data_info($series_name_key);
-    $number      = $order->get_data_info($number_key);
-    $link        = $order->get_data_info($link_key);
-    
-    $order_meta_table = OblioSoftware\Order::get_meta_table_name();
-    $field_name = OblioSoftware\Order::get_meta_table_field_name();
-    $sql = "SELECT pmn.{$field_name} " . 
-		"FROM `{$order_meta_table}` pmn " . 
-		"JOIN `{$order_meta_table}` pms ON(pmn.post_id=pms.post_id AND pmn.meta_key='{$number_key}' AND pms.meta_key='{$series_name_key}') " . 
-		"WHERE pmn.meta_value<>'' AND pms.meta_value='{$series_name}' " . 
-		"ORDER BY pmn.`meta_value` DESC " . 
-		"LIMIT 1";
+    // Check HPOS
+    $hpos_enabled = wc_get_container()
+		->get( \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class )
+		->custom_orders_table_usage_is_enabled();
+
+    // Set HPOS tables
+    $order_meta_table = $hpos_enabled ? $wpdb->prefix . "wc_orders_meta" : $wpdb->prefix . "postmeta";
+    $order_id_field   = $hpos_enabled ? "order_id" : "post_id";
+
+    // SQL Query Update
+    $sql = $wpdb->prepare( "
+    SELECT pmn.meta_value 
+    FROM `{$order_meta_table}` pmn
+    JOIN `{$order_meta_table}` pms 
+    ON pmn.{$order_id_field} = pms.{$order_id_field} 
+    AND pmn.meta_key = %s 
+    AND pms.meta_key = %s
+    WHERE pmn.meta_value <> ''
+    AND pms.meta_value = %s
+    ORDER BY CAST(pmn.meta_value AS UNSIGNED) DESC
+    LIMIT 1
+    ", $number_key, $series_name_key, $series_name );
+	
     $lastInvoice = !$link ? null : $wpdb->get_var($sql);
     if ($link) {
         echo sprintf('<p><a class="button" href="%s" target="_blank">%s</a></p>',
@@ -71,6 +82,7 @@ $displayDocument = function($post, $options = []) use ($wpdb, $order) {
             'link'        => $link,
         ]);
     }
+}
 ?>
 
 <script type="text/javascript">
@@ -145,7 +157,6 @@ $displayDocument = function($post, $options = []) use ($wpdb, $order) {
 })(jQuery);
 </script>
 <?php
-};
 
 $displayDocument($post, [
     'docType' => 'invoice',
