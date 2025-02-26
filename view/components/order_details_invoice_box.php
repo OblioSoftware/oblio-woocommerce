@@ -5,25 +5,6 @@ use Automattic\WooCommerce\Internal\DataStores\Orders\OrdersTableDataStore;
 
 $order = new OblioSoftware\Order($post->ID);
 if ((int) get_option('oblio_gen_date') === 2) {
-    $date        = $order->get_date_created();
-    $invoiceDate = $date ? $date->format('Y-m-d') : date('Y-m-d');
-} else {
-    $invoiceDate = date('Y-m-d');
-}
-$invoiceDateClass = '';
-if ($order->get_data_info('oblio_invoice_link')) {
-    $invoiceDateClass = 'hidden';
-}
-?>
-<input type="date" id="oblio_invoice_date" class="<?php echo $invoiceDateClass; ?>" value="<?php echo $invoiceDate; ?>" />
-<?php
-
-<div class="oblio-ajax-response"></div>
-<?php
-use Automattic\WooCommerce\Internal\DataStores\Orders\OrdersTableDataStore;
-
-$order = new OblioSoftware\Order($post->ID);
-if ((int) get_option('oblio_gen_date') === 2) {
 	$date        = $order->get_date_created();
 	$invoiceDate = $date ? $date->format('Y-m-d') : date('Y-m-d');
 } else {
@@ -228,11 +209,4 @@ $displayDocument( $post, [
     ul.order_notes li .note_content.note_error::after {border-color: #c9356e transparent;}
     ul.order_notes li.system-note .note_content.note_success {background:#46b450;color:#fff;}
     ul.order_notes li .note_content.note_success::after {border-color: #46b450 transparent;}
-</style>
-?>
-<style type="text/css">
-ul.order_notes li.system-note .note_content.note_error {background:#c9356e;color:#fff;}
-ul.order_notes li .note_content.note_error::after {border-color: #c9356e transparent;}
-ul.order_notes li.system-note .note_content.note_success {background:#46b450;color:#fff;}
-ul.order_notes li .note_content.note_success::after {border-color: #46b450 transparent;}
 </style>
