@@ -255,8 +255,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             'state'         => _wp_oblio_find_client_data('billing_state', $order),
             'city'          => $order->get_billing_city(),
             'country'       => _wp_oblio_find_client_data('billing_country', $order),
-            // 'iban'          => '',
-            // 'bank'          => '',
+            'iban'          => _wp_oblio_find_client_data('billing_iban', $order),
+            'bank'          =>  _wp_oblio_find_client_data('billing_bank', $order),
             'email'         => $order->get_billing_email(),
             'phone'         => $order->get_billing_phone(),
             'contact'       => $contact,
@@ -642,6 +642,12 @@ function _wp_oblio_find_client_data($type, OblioSoftware\Order $order) {
                 return $curiero['nr_reg_com'];
             }
             $expression = '/(regcom|reg\_com|rc)$/';
+            break;
+	case 'iban':
+    	    $expression = '/(billing\_iban|iban|swift|bic)$/';
+            break;
+	case 'bank':
+            $expression = '/(bank|bank\_name|bank\_details)$/';
             break;
         case 'billing_state':
             $countryCode = $order->get_billing_country();
