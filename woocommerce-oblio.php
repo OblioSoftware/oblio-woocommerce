@@ -242,9 +242,17 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             ];
         }
     }
+
     
     $oblio_invoice_mentions = get_option('oblio_invoice_mentions');
     $oblio_invoice_mentions = str_replace($needle, $haystack, $oblio_invoice_mentions);
+	
+    $city  = $order->get_billing_city();
+    $state = _wp_oblio_find_client_data('billing_state', $order);
+	
+    if ($state === 'București' && preg_match('/^S\s*([1-6])$/', $city, $matches)) {
+		$city = 'SECTOR ' . $matches[1];
+    };
     $data = array(
         'cif'                => $cui,
         'client'             => [
@@ -252,8 +260,8 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
             'name'          => trim($order->get_billing_company()) === '' ? $contact : trim($order->get_billing_company()),
             'rc'            => _wp_oblio_find_client_data('rc', $order),
             'address'       => trim($order->get_billing_address_1() . ', ' . $order->get_billing_address_2(), ', '),
-            'state'         => _wp_oblio_find_client_data('billing_state', $order),
-            'city'          => $order->get_billing_city(),
+            'state'         => $state,
+            'city'          => $city,
             'country'       => _wp_oblio_find_client_data('billing_country', $order),
             'iban'          => _wp_oblio_find_client_data('iban', $order),
             'bank'          => _wp_oblio_find_client_data('bank', $order),
