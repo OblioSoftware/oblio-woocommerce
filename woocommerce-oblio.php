@@ -234,7 +234,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     $collect = [];
     if ($auto_collect !== 0) {
         $isCard = preg_match('/card/i', $order->get_payment_method_title()) ||
-            in_array($order->get_payment_method(), ['stripe_cc', 'stripe', 'paylike', 'ipay', 'netopiapayments']);
+            in_array($order->get_payment_method(), ['stripe_cc', 'stripe', 'stripe_applepay', 'stripe_googlepay', 'stripe_payment_request', 'paylike', 'ipay', 'netopiapayments']);
         if (($auto_collect === 1 && $isCard) || $auto_collect === 2) {
             $collect = [
                 'type'            => $isCard ? 'Card' : 'Ordin de plata',
