@@ -39,6 +39,7 @@ jobs:
           COMMIT_MESSAGE='${{ github.event.head_commit.message }}'
           NOW=$(date +'%Y-%m-%d %H:%M:%S')
           JSON_TEMPLATE='{"version":"[PLUGIN_VERSION]",
+          "name":"Woocommerce Oblio.eu",
           "url":"https://www.oblio.eu/",
           "download_url":"https://obliosoftware.github.io/builds/woocommerce/oblio-woocommerce.zip",
           "requires":"6.3",
