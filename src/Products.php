@@ -204,10 +204,10 @@ class Products {
             ? ' AND ' . (is_array($options['where']) ? implode(' AND ', $options['where']) : $options['where'])
             : '';
 
-        $sql = "SELECT p.ID, CONCAT('{', GROUP_CONCAT(CONCAT('\"', woim.meta_key, '\"', ':', '\"', woim.meta_value, '\"')), '}') AS info FROM `{$wpdb->posts}` p " .
+        $sql = "SELECT p.ID, CONCAT('{', GROUP_CONCAT(CONCAT('\"', woim.meta_key, '\"', ':', '\"', woim.meta_value, '\"')), '}') AS info FROM `{$table_prefix}wc_orders` p " .
             "JOIN {$table_prefix}woocommerce_order_items woi ON(woi.order_id = p.ID AND woi.order_item_type = 'line_item') " . 
             "JOIN {$table_prefix}woocommerce_order_itemmeta woim ON(woim.order_item_id = woi.order_item_id AND woim.meta_key IN('_product_id', '_qty', '_variation_id')) " . 
-            "WHERE p.`post_type` = 'shop_order' {$options['where']}
+            "WHERE p.`type` = 'shop_order' {$options['where']}
             GROUP BY woi.order_item_id";
 
         $products = [];

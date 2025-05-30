@@ -236,7 +236,7 @@ function _wp_oblio_load_plugin() {
     add_filter('manage_woocommerce_page_wc-orders_columns', '_wp_oblio_add_invoice_column', 10); // WC 7.1+
     add_filter('manage_edit-shop_order_columns', '_wp_oblio_add_invoice_column', 10);
     add_action('manage_woocommerce_page_wc-orders_custom_column', '_wp_oblio_add_invoice_column_content', 10, 2); // WC 7.1+
-    add_action('manage_shop_order_posts_custom_column', '_wp_oblio_add_invoice_column_content', 10);
+    add_action('manage_shop_order_posts_custom_column', '_wp_oblio_add_invoice_column_content', 10, 2);
     
     add_action('add_meta_boxes', '_wp_oblio_order_details_box');
 
@@ -395,10 +395,9 @@ function _wp_oblio_add_invoice_column($columns) {
 }
 
 function _wp_oblio_add_invoice_column_content($column, $item = null) {
-    global $post;
     switch ($column) {
         case 'oblio_invoice':
-            $order       = new OblioSoftware\Order(empty($post) ? $item->get_id() : $post->ID);
+            $order       = new OblioSoftware\Order(is_int($item) ? $item : $item->get_id());
             $series_name = $order->get_data_info('oblio_invoice_series_name');
             $number      = $order->get_data_info('oblio_invoice_number');
             $link        = $order->get_data_info('oblio_invoice_link');

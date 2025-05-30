@@ -55,12 +55,12 @@ if (!function_exists('_wp_oblio_sync')) {
             if ($oblio_stock_adjusments === 1) {
                 $ordersQty = $service->getOrdersQty([
                     'where' => [
-                        "p.`post_status` IN('wc-on-hold', 'wc-processing', 'wc-pending')",
-                        sprintf("p.post_date > '%s'", date('Y-m-d', time() - (3600 * 24 * 30))),
+                        "p.`status` IN('wc-on-hold', 'wc-processing', 'wc-pending')",
+                        sprintf("p.date_created_gmt > '%s'", date('Y-m-d', time() - (3600 * 24 * 30))),
                     ]
                 ]);
             }
-    
+
             do {
                 if ($offset > 0) {
                     usleep(500000);
