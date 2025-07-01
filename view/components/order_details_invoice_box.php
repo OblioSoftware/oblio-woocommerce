@@ -69,7 +69,7 @@ $displayDocument = function ( $post, $options = [] ) use ( $wpdb, $order ) {
 			__( 'Emite ' . $options['name'], 'woocommerce-oblio' )
 		);
 
-		if ( $options['docType'] === 'invoice' && get_option( 'oblio_use_stock' ) === '1' ) {
+		if ( $options['docType'] === 'invoice' && intval( get_option( 'oblio_use_stock' ) ) === 1) {
 			echo sprintf(
 				'<p><a class="button oblio-generate-%s" href="%s" target="_blank">%s</a></p>',
 				$options['docType'],
