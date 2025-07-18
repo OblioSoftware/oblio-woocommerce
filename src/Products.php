@@ -135,11 +135,23 @@ class Products {
             if ($package_number === 0) { // not set
                 $package_number = 1;
             }
-            
+
             $price = floatval($data['price']);
-            if (!$data['vatIncluded']) {
-                $price *= 1 + (floatval($data['vatPercentage']) / 100);
+            $vatPercentage = floatval($data['vatPercentage']);
+            
+            $oblioHasVat = (bool)$data['vatIncluded'];
+            $wcPricesIncludeTax = wc_prices_include_tax();
+
+            if ($oblioHasVat && !$wcPricesIncludeTax) {
+                    $price = $price / (1 + $vatPercentage / 100);
+            } elseif (!$oblioHasVat && $wcPricesIncludeTax) {
+                $price = $price * (1 + $vatPercentage / 100);
             }
+            
+            // $price = floatval($data['price']);
+            // if (!$data['vatIncluded']) {
+            //     $price *= 1 + (floatval($data['vatPercentage']) / 100);
+            // }
             
             $stock_quantity = isset($data['quantity']) ? floor($data['quantity'] / $package_number) : '';
             $stock_status   = isset($data['quantity']) && $data['quantity'] > 0 ? 'instock' : 'outofstock';
@@ -151,8 +163,10 @@ class Products {
 
             // update_post_meta($post_id, '_sku', isset($data['code']) ? $data['code'] : '');
             // update_post_meta($post_id, '_tax_class', $_tax_class);
-            // update_post_meta($post_id, '_regular_price', $price * $package_number);
-            // update_post_meta($post_id, '_price', $price * $package_number);
+            if (get_option('oblio_update_price') == 1){
+                update_post_meta($post_id, '_regular_price', $price * $package_number);
+                update_post_meta($post_id, '_price', $price * $package_number);
+            }
             // update_post_meta($post_id, '_manage_stock', isset($data['quantity']) ? 'yes' : 'no');
             update_post_meta($post_id, '_stock', $stock_quantity);
             update_post_meta($post_id, '_stock_status', $stock_status);
@@ -173,6 +187,11 @@ class Products {
                 $product = new WC_Product($post_id);
                 $product->set_stock_quantity($stock_quantity);
                 $product->set_stock_status($stock_status);
+                if(get_options('oblio_update_price') == 1){
+					$product->set_price($price * $package_number);
+					$product->set_regular_price($price * $package_number);
+				}
+                
 
                 if (!is_wp_error(wp_set_post_terms($post_id, $terms, 'product_visibility', false))) {
                     do_action('woocommerce_product_set_visibility', $post_id, $product->get_catalog_visibility());
