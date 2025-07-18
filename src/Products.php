@@ -187,6 +187,11 @@ class Products {
                 $product = new WC_Product($post_id);
                 $product->set_stock_quantity($stock_quantity);
                 $product->set_stock_status($stock_status);
+                if(get_options('oblio_update_price') == 1){
+					$product->set_price($price * $package_number);
+					$product->set_regular_price($price * $package_number);
+				}
+                
 
                 if (!is_wp_error(wp_set_post_terms($post_id, $terms, 'product_visibility', false))) {
                     do_action('woocommerce_product_set_visibility', $post_id, $product->get_catalog_visibility());
