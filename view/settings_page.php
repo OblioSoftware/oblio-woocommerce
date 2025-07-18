@@ -431,6 +431,16 @@ Va multumim.", 'woocommerce-oblio'));
                     <p class="description"><?php esc_html_e('Dezactiveaza modifcarea pretul produsului in Oblio la generearea facturii', 'woocommerce-oblio'); ?></p>
                 </td>
             </tr>
+            <tr valign="top" class="form-field">
+                <th scope="row"><?php esc_html_e('Activeaza actualizarea pretului produsului in WooCommerce in momentul sincronizarii stocului', 'woocommerce-oblio'); ?></th>
+                <td>
+                    <?php 
+                    $oblio_update_price = get_option('oblio_update_price');
+                    ?>
+                     <input type="checkbox" name="oblio_update_price"<?php echo $oblio_update_price == '1' ? ' checked' : ''; ?> value="1" />
+                    <p class="description"><?php esc_html_e('La sincronizarea stocului, preturile de vanzare ale produselor vor fi actualizate conform valorilor listate in Oblio', 'woocommerce-oblio'); ?></p>
+                </td>
+            </tr>
         </table>
         
         <?php submit_button(); ?>

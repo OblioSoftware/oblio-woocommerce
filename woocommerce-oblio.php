@@ -88,6 +88,7 @@ if (!function_exists('_wp_oblio_sync')) {
             $total = $offset - $limitPerPage + $index;
             wc_update_product_lookup_tables_column('stock_quantity');
             wc_update_product_lookup_tables_column('stock_status');
+            wc_update_product_lookup_tables_column('min_max_price');
         } catch (Exception $e) {
             $error = $e->getMessage();
             $accessTokenHandler->clear();
