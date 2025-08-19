@@ -166,6 +166,7 @@ class Products {
             if (get_option('oblio_update_price') == 1){
                 update_post_meta($post_id, '_regular_price', $price * $package_number);
                 update_post_meta($post_id, '_price', $price * $package_number);
+				update_post_meta($post_id, '_sale_price', "");
             }
             // update_post_meta($post_id, '_manage_stock', isset($data['quantity']) ? 'yes' : 'no');
             update_post_meta($post_id, '_stock', $stock_quantity);
@@ -190,6 +191,7 @@ class Products {
                 if(get_options('oblio_update_price') == 1){
 					$product->set_price($price * $package_number);
 					$product->set_regular_price($price * $package_number);
+					$product->set_sale_price("");
 				}
                 
 
