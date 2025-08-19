@@ -437,7 +437,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
 			    $fee_total = $fee->get_total() + $fee->get_total_tax();
 			    if ($fee_total != 0) {
 				    $vatName = '';
-				    $isTaxable = $fee->get_total_tax() > 0;
+				    $isTaxable = abs($fee->get_total_tax()) > 0;
 
 				    if ($isTaxable) {
 					    $vatPercentage = round($fee->get_total_tax() / $fee->get_total() * 100);
