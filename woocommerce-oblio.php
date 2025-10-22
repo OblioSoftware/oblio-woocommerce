@@ -122,14 +122,15 @@ function _wp_oblio_delete_invoice($order_id, $options = []) {
     $series_name = $order->get_data_info($series_name_key);
     $number      = $order->get_data_info($number_key);
     $link        = $order->get_data_info($link_key);
-
-    $idempotencyKey = _wp_oblio_idempotence_key($order_id);
     if ($link) {
         try {
             $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
             $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
             $api->setCif($cui);
-            $response = $api->delete($options['docType'], $series_name, $number, $idempotencyKey);
+            $response = $api->delete($options['docType'], $series_name, $number, [
+              'deleteCollect'  => true,
+              'idempotencyKey' => _wp_oblio_idempotence_key($order_id),
+            ]);
             if ($response['status'] === 200) {
                 $order->set_data_info($series_name_key, '');
                 $order->set_data_info($number_key, '');
