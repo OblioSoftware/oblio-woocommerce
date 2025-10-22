@@ -87,19 +87,20 @@ class Api {
         $this->_checkErrorResponse($request);
         return json_decode($request->getResponse(), true);
     }
-    
+
     /**
      *  $_cif needs to be set
      *  @param string $type - invoice/notice/proforma/receipt
      *  @param string $seriesName
      *  @param int $number
+     *  @param string|null $idempotencyKey
      *  @return array $response
      */
-    public function delete($type, $seriesName, $number) {
+    public function delete($type, $seriesName, $number, $idempotencyKey = null) {
         $this->_checkType($type);
         $cif = $this->_getCif();
         $request = $this->_getAuthorization();
-        $request->delete($this->_baseURL . '/api/docs/' . $type, compact('cif', 'seriesName', 'number'));
+        $request->delete($this->_baseURL . '/api/docs/' . $type, compact('cif', 'seriesName', 'number', 'idempotencyKey'));
         $this->_checkErrorResponse($request);
         return json_decode($request->getResponse(), true);
     }
