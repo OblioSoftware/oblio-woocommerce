@@ -392,7 +392,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
                 'management'                => $management,
                 'save'                      => intval(get_option('oblio_notsave_price', 0)) === 0
             ];
-            if (empty($discount_in_product) && $price !== number_format($regular_price, 4, '.', '')) {
+            if (empty($discount_in_product) && $price !== number_format((float) $regular_price, 4, '.', '')) {
                 $discount = ($regular_price * $item['quantity']) - ($item['total'] + $item['total_tax']);
                 $discount = round($discount, $data['precision'], PHP_ROUND_HALF_DOWN);
                 if ($discount > 0) {
