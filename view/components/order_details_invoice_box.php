@@ -51,8 +51,6 @@ $displayDocument = function ( $post, $options = [] ) use ( $wpdb, $order ) {
 
 	$lastInvoice = $wpdb->get_var( $sql );
 
-	$lastInvoice = $wpdb->get_var( $sql );
-
 	if ( $link ) {
 		echo sprintf(
 			'<p><a class="button" href="%s" target="_blank">%s</a></p>',
