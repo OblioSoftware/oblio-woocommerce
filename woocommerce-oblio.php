@@ -165,7 +165,7 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     $product_type = get_option('oblio_product_type');
     
     $gen_date     = (int) get_option('oblio_gen_date');
-    $auto_collect = (int) get_option('oblio_auto_collect');
+    $selected_methods = (array) get_option('oblio_auto_collect', []);
     
     $discount_in_product    = (int) get_option('oblio_invoice_discount_in_product');
     $woocommerce_calc_taxes = get_option('woocommerce_calc_taxes') === 'yes';
@@ -232,17 +232,21 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
         date('d.m.Y', $order->get_date_created()->format('U')),
         $order->get_payment_method_title(),
     );
-    $collect = [];
-    if ($auto_collect !== 0) {
-        $isCard = preg_match('/card/i', $order->get_payment_method_title()) ||
-            in_array($order->get_payment_method(), ['stripe_cc', 'stripe', 'stripe_applepay', 'stripe_googlepay', 'stripe_payment_request', 'paylike', 'ipay', 'netopiapayments']);
-        if (($auto_collect === 1 && $isCard) || $auto_collect === 2) {
-            $collect = [
-                'type'            => $isCard ? 'Card' : 'Ordin de plata',
-                'documentNumber'  => '#' . $order_id,
-            ];
-        }
-    }
+    
+	$payment_method = $order->get_payment_method();
+
+	if ( in_array( $payment_method, $selected_methods, true ) ) {
+		$type = 'Card';
+
+		if ( in_array( $payment_method, [ 'bacs', 'cod' ], true ) ) {
+			$type = ( $payment_method === 'bacs' ) ? 'Ordin de plata' : 'Ramburs';
+		}
+
+		$collect = [
+			'type'           => $type,
+			'documentNumber' => '#' . $order_id,
+		];
+	}
 
     
     $oblio_invoice_mentions = get_option('oblio_invoice_mentions');
