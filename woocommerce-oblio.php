@@ -29,6 +29,9 @@ if (OBLIO_AUTO_UPDATE) {
 
 if (!function_exists('_wp_oblio_sync')) {
     function _wp_oblio_sync(&$error = '') {
+		$logger = wc_get_logger();
+		$log_id = 'oblio_sync';
+		
         $email        = get_option('oblio_email');
         $secret       = get_option('oblio_api_secret');
         $cui          = get_option('oblio_cui');
@@ -39,8 +42,11 @@ if (!function_exists('_wp_oblio_sync')) {
         $oblio_stock_adjusments = (int) get_option('oblio_stock_adjusments');
         
         if (!$email || !$secret || !$cui || !$use_stock) {
+			$logger->warning( 'Missing configuration. Sync aborted.', [ 'source' => $log_id ] );
             return 0;
         }
+
+		$logger->info( 'Starting Oblio sync...', [ 'source' => $log_id ] );
     
         $total = 0;
         try {
@@ -53,6 +59,7 @@ if (!function_exists('_wp_oblio_sync')) {
             $service = new OblioSoftware\Products();
             $ordersQty = [];
             if ($oblio_stock_adjusments === 1) {
+				$logger->info( 'Calculating active orders (30 days)...', [ 'source' => $log_id ] );
                 $ordersQty = $service->getOrdersQty([
                     'where' => [
                         "p.`status` IN('wc-on-hold', 'wc-processing', 'wc-pending')",
@@ -65,6 +72,7 @@ if (!function_exists('_wp_oblio_sync')) {
                 if ($offset > 0) {
                     usleep(500000);
                 }
+				$logger->info( "Fetching products batch {$offset}...", [ 'source' => $log_id ] );
                 $products = $api->nomenclature('products', null, [
                     'workStation' => $workstation,
                     'management'  => $management,
@@ -75,22 +83,28 @@ if (!function_exists('_wp_oblio_sync')) {
                     $index++;
                     $post = $service->find($product);
                     if ($post && _wp_oblio_get_product_type($post->ID, $product_type) !== $product['productType']) {
+						$logger->debug( "Skipped product {$product['code']} (type mismatch).", [ 'source' => $log_id ] );
                         continue;
                     }
                     if ($post) {
+						$logger->debug( "Updating product ID {$post->ID} ({$product['code']}).", [ 'source' => $log_id ] );
                         $service->update($post->ID, $product, $ordersQty);
+						$total++;
                     } else {
                         // $service->insert($product, $ordersQty);
                     }
                 }
                 $offset += $limitPerPage; // next page
             } while ($index === $limitPerPage);
+			$logger->info( "Sync completed. Updated {$total} products. Rebuilding lookup tables...", [ 'source' => $log_id ] );
             $total = $offset - $limitPerPage + $index;
             wc_update_product_lookup_tables_column('stock_quantity');
             wc_update_product_lookup_tables_column('stock_status');
             wc_update_product_lookup_tables_column('min_max_price');
+			$logger->info( "Lookup tables updated. Sync fully completed.", [ 'source' => $log_id ] );
         } catch (Exception $e) {
             $error = $e->getMessage();
+			$logger->error( "Sync failed: {$error}", [ 'source' => $log_id ] );
             $accessTokenHandler->clear();
         }
         return $total;
