@@ -128,8 +128,8 @@ function _wp_oblio_delete_invoice($order_id, $options = []) {
             $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
             $api->setCif($cui);
             $response = $api->delete($options['docType'], $series_name, $number, [
-              'deleteCollect'  => true,
-              'idempotencyKey' => _wp_oblio_idempotence_key($order_id),
+                'deleteCollect'  => true,
+                'idempotencyKey' => _wp_oblio_idempotence_key($order_id),
             ]);
             if ($response['status'] === 200) {
                 $order->set_data_info($series_name_key, '');
@@ -235,19 +235,24 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
         date('d.m.Y', $order->get_date_created()->format('U')),
         $order->get_payment_method_title(),
     );
+
     $collect = [];
     if ($auto_collect !== 0) {
-        $isCard = preg_match('/card/i', $order->get_payment_method_title()) ||
-            in_array($order->get_payment_method(), ['stripe_cc', 'stripe', 'stripe_applepay', 'stripe_googlepay', 'stripe_payment_request', 'paylike', 'ipay', 'netopiapayments']);
+        $isCard = in_array($order->get_payment_method(), ['bacs', 'cod']);
         if (($auto_collect === 1 && $isCard) || $auto_collect === 2) {
+            $type = 'Card';
+            switch ($order->get_payment_method()) {
+                case 'cod': $type = 'Ramburs'; break;
+                case 'bacs': $type = 'Ordin de plata'; break;
+            }
+            
             $collect = [
-                'type'            => $isCard ? 'Card' : 'Ordin de plata',
+                'type'            => $type,
                 'documentNumber'  => '#' . $order_id,
             ];
         }
     }
 
-    
     $oblio_invoice_mentions = get_option('oblio_invoice_mentions');
     $oblio_invoice_mentions = str_replace($needle, $haystack, $oblio_invoice_mentions);
 	
