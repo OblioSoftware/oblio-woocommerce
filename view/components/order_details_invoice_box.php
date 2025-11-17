@@ -32,15 +32,20 @@ $displayDocument = function ( $post, $options = [] ) use ( $wpdb, $order ) {
 
     $order_meta_table = OblioSoftware\Order::get_meta_table_name();
     $order_id_field   = OblioSoftware\Order::get_meta_table_field_name();
+    $meta_id_field    = $order_id_field === 'post_id' ? 'meta_id' : 'id';
 
 	$sql = $wpdb->prepare( "
-        SELECT pmn.{$order_id_field} 
-        FROM `{$order_meta_table}` pmn
-        JOIN `{$order_meta_table}` pms
-            ON pmn.{$order_id_field} = pms.{$order_id_field} 
-            AND pmn.meta_key = %s AND pms.meta_key = %s
-        WHERE pmn.meta_value <> '' AND pms.meta_value = %s
-        ORDER BY CAST(pmn.meta_value AS UNSIGNED) DESC
+        SELECT {$order_id_field}  FROM (
+            SELECT pmn.{$order_id_field}, pmn.meta_value
+            FROM `{$order_meta_table}` pmn
+            JOIN `{$order_meta_table}` pms
+                ON pmn.{$order_id_field} = pms.{$order_id_field} 
+                AND pmn.meta_key = %s AND pms.meta_key = %s
+            WHERE pmn.meta_value <> '' AND pms.meta_value = %s
+            ORDER BY pmn.{$meta_id_field} DESC
+            LIMIT 100
+        ) AS tab
+        ORDER BY CAST(meta_value AS UNSIGNED) DESC
         LIMIT 1
     ", $number_key, $series_name_key, $series_name );
 
