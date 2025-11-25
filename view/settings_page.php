@@ -152,14 +152,19 @@
             <tr valign="top" class="form-field">
                 <th scope="row"><?php esc_html_e('Incasare factura automata', 'woocommerce-oblio'); ?></th>
                 <td>
-                    <?php 
-                    $oblio_auto_collect = (int) get_option('oblio_auto_collect');
+                    <?php
+                    $all_gateways = WC()->payment_gateways()->payment_gateways();
+                    $selected_gateways = (array) get_option('oblio_auto_collect', []);
+
+                    foreach ($all_gateways as $gateway_id => $gateway) {
+                        $checked = in_array($gateway_id, $selected_gateways, true) ? 'checked' : '';
+                        echo '<label style="display:block; margin-bottom:4px;">';
+                        echo '<input type="checkbox" name="oblio_auto_collect[]" value="' . esc_attr($gateway_id) . '" ' . $checked . '> ';
+                        echo esc_html($gateway->get_title() . ' (' . $gateway_id . ')');
+                        echo '</label>';
+                    }
                     ?>
-                    <select name="oblio_auto_collect" id="id_oblio_auto_collect">
-                      <option value="0"><?php esc_html_e('Nu', 'woocommerce-oblio'); ?></option>
-                      <option value="1"<?php echo $oblio_auto_collect === 1 ? ' selected' : ''; ?>><?php esc_html_e('Platile prin card', 'woocommerce-oblio'); ?></option>
-                      <option value="2"<?php echo $oblio_auto_collect === 2 ? ' selected' : ''; ?>><?php esc_html_e('Toate', 'woocommerce-oblio'); ?></option>
-                    </select>
+                    <p class="description"><?php esc_html_e('Selectează metodele de plată pentru care să se facă automat încasarea facturii.', 'woocommerce-oblio'); ?></p>
                 </td>
             </tr>
             <tr valign="top" class="form-field">
