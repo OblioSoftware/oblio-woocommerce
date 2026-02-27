@@ -225,16 +225,19 @@ function _wp_oblio_generate_invoice($order_id, $options = array()) {
     $dueDays = (int) get_option('oblio_invoice_due');
     $dueDate = $dueDays > 0 ? date('Y-m-d', strtotime($issueDate) + $dueDays * 3600 * 24) : '';
     
-    $needle = array(
-        '[order_id]',
-        '[date]',
-        '[payment]',
-    );
-    $haystack = array(
-        sprintf('#%d', $order->get_order_number()),
-        date('d.m.Y', $order->get_date_created()->format('U')),
-        $order->get_payment_method_title(),
-    );
+	$needle   = array(
+		'[order_id]',
+		'[date]',
+		'[payment]',
+		'[shipping]'
+	);
+	$haystack = array(
+		sprintf( '#%d', $order->get_order_number() ),
+		$order->get_date_created()->date_i18n( 'd.m.Y' ),
+		$order->get_payment_method_title(),
+		$order->get_shipping_method(),
+	);
+
 
     $collect = [];
     $isCard = !in_array($order->get_payment_method(), ['bacs', 'cod']);
