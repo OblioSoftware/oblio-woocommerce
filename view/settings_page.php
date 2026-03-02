@@ -384,6 +384,7 @@ Va multumim.", 'woocommerce-oblio'));
                   <small>[order_id] = <?php esc_html_e('numar comanda', 'woocommerce-oblio'); ?></small><br>
                   <small>[date] = <?php esc_html_e('data comanda', 'woocommerce-oblio'); ?></small><br>
                   <small>[payment] = <?php esc_html_e('modalitate de plata', 'woocommerce-oblio'); ?></small><br>
+                    <small>[shipping] = <?php esc_html_e('modalitate de livrare', 'woocommerce-oblio'); ?></small><br>
                 </th>
                 <td>
                     <?php 
