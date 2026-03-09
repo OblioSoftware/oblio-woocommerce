@@ -161,9 +161,11 @@ class Products {
                 $stock_quantity -= $ordersQty[$post_id];
             }
 
+			$oblio_update_price = get_option('oblio_update_price') == 1;
+
             // update_post_meta($post_id, '_sku', isset($data['code']) ? $data['code'] : '');
             // update_post_meta($post_id, '_tax_class', $_tax_class);
-            if (get_option('oblio_update_price') == 1){
+            if ($oblio_update_price) {
                 update_post_meta($post_id, '_regular_price', $price * $package_number);
                 update_post_meta($post_id, '_price', $price * $package_number);
 				update_post_meta($post_id, '_sale_price', "");
@@ -188,12 +190,11 @@ class Products {
                 $product = new WC_Product($post_id);
                 $product->set_stock_quantity($stock_quantity);
                 $product->set_stock_status($stock_status);
-                if(get_options('oblio_update_price') == 1){
+                if ($oblio_update_price) {
 					$product->set_price($price * $package_number);
 					$product->set_regular_price($price * $package_number);
 					$product->set_sale_price("");
 				}
-                
 
                 if (!is_wp_error(wp_set_post_terms($post_id, $terms, 'product_visibility', false))) {
                     do_action('woocommerce_product_set_visibility', $post_id, $product->get_catalog_visibility());
