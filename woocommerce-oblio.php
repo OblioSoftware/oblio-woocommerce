@@ -810,6 +810,7 @@ function _wp_oblio_get_languages() {
         'IT' => 'Italiana',
         'SP' => 'Spaniola',
         'HU' => 'Maghiara',
-        'DE' => 'Germana',                   
+        'DE' => 'Germana',
+        'BG' => 'Bulgara',
     ];
 }
