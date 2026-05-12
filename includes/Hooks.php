@@ -329,11 +329,11 @@ function oblio_bulk_action_handler($redirect_to, $doaction, $post_ids) {
         $order = new OblioSoftware\Order($post_id);
         $link = $order->get_data_info('oblio_invoice_link');
         if (empty($link)) {
-            // $result = _wp_oblio_generate_invoice($post_id, ['use_stock' => $oblio_invoice_autogen_use_stock]);
-            as_enqueue_async_action('oblio_generate_invoice', [
-                'order_id' => $post_id,
-                'options'  => ['use_stock' => $oblio_invoice_autogen_use_stock],
-            ]);
+            $result = _wp_oblio_generate_invoice($post_id, ['use_stock' => $oblio_invoice_autogen_use_stock]);
+            // as_enqueue_async_action('oblio_generate_invoice', [
+            //     'order_id' => $post_id,
+            //     'options'  => ['use_stock' => $oblio_invoice_autogen_use_stock],
+            // ]);
         }
     }
     $redirect_to = add_query_arg('oblio_bulk_posts', count($post_ids), $redirect_to);
