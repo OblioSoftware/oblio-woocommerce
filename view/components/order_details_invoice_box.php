@@ -95,6 +95,29 @@ $displayDocument = function ( $post, $options = [] ) use ( $wpdb, $order ) {
 		);
 	}
 
+    if ( $options['docType'] === 'invoice' ) {
+        $storno_series = $order->get_data_info( 'oblio_storno_series_name' );
+        $storno_number = $order->get_data_info( 'oblio_storno_number' );
+        $storno_link   = $order->get_data_info( 'oblio_storno_link' );
+        $hasStorno     = $storno_series && $storno_number && $storno_link;
+        $stornoBtnHide = ( $link && ! $hasStorno ) ? '' : 'hidden';
+        echo sprintf(
+                '<p><a class="button oblio-storno-%s %s" style="background:#c9356e;border-color:#a82a59;color:#fff;text-shadow:none;box-shadow:none;" href="%s" target="_blank">%s</a></p>',
+                $options['docType'],
+                $stornoBtnHide,
+                _wp_oblio_build_url( 'oblio-storno-' . $options['docType'], $post ),
+                __( 'Stornează factura', 'woocommerce-oblio' )
+        );
+        if ( $hasStorno ) {
+            echo sprintf(
+                    '<p><a class="button" href="%s" target="_blank">%s</a></p>',
+                    esc_url( $storno_link ),
+                    sprintf( __( 'Vezi factura storno %s %d', 'woocommerce-oblio' ), $storno_series, (int) $storno_number )
+            );
+        }
+    }
+
+
 	if ( isset( $options['fn'] ) && is_callable( $options['fn'] ) ) {
 		$options['fn']( [
 			'series_name' => $series_name,
@@ -172,6 +195,34 @@ $displayDocument = function ( $post, $options = [] ) use ( $wpdb, $order ) {
                         }
                     });
                 });
+                <?php if ( $options['docType'] === 'invoice' ) { ?>
+                var stornoButton = $('.oblio-storno-<?php echo $options['docType']; ?>');
+                stornoButton.on('click', function (e) {
+                    e.preventDefault();
+                    var self = $(this);
+                    if (self.hasClass('disabled')) {
+                        return false;
+                    }
+                    if (!window.confirm('Esti sigur ca vrei sa emiti factura storno (refund 100%)? Aceasta actiune nu poate fi anulata.')) {
+                        return false;
+                    }
+                    self.addClass('disabled');
+                    jQuery.ajax({
+                        dataType: 'json',
+                        url: self.attr('href'),
+                        data: {},
+                        success: function (response) {
+                            if (response.type == 'success') {
+                                location.reload();
+                            } else {
+                                var alert = '<ul class="order_notes"><li class="note system-note"><div class="note_content note_error">' + response.message + '</div></li></ul>';
+                                responseContainer.html(alert);
+                                self.removeClass('disabled');
+                            }
+                        }
+                    });
+                });
+                <?php } ?>
             });
         })(jQuery);
     </script>

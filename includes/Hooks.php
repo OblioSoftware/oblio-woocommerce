@@ -152,6 +152,7 @@ function _wp_oblio_invoice_ajax_handler() {
         case 'oblio-view-proforma': die(_wp_oblio_generate_invoice($order_id, ['redirect' => true, 'docType' => 'proforma', 'date' => $date])); break; 
         case 'oblio-delete-invoice': $result = _wp_oblio_delete_invoice($order_id); break;
         case 'oblio-delete-proforma': $result = _wp_oblio_delete_invoice($order_id, ['docType' => 'proforma']); break;
+	    case 'oblio-storno-invoice': $result = _wp_oblio_storno_invoice($order_id); break;
     }
     die(json_encode($result));
 }

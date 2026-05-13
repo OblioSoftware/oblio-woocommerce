@@ -147,6 +147,98 @@ function _wp_oblio_delete_invoice($order_id, $options = []) {
     return $result;
 }
 
+function _wp_oblio_storno_invoice($order_id, $options = []) {
+    $order_id = (int) $order_id;
+    if (!$order_id) {
+        return array();
+    }
+
+    $email       = get_option('oblio_email');
+    $secret      = get_option('oblio_api_secret');
+    $cui         = get_option('oblio_cui');
+    $series_cfg  = get_option('oblio_series_name');
+    $result      = array(
+            'type'    => 'error',
+            'message' => '',
+    );
+
+    $series_name = $options['series_name'] ?? '';
+    $number      = $options['number'] ?? '';
+
+    $order = new OblioSoftware\Order($order_id);
+    if (!$series_name) {
+        $series_name = $order->get_data_info('oblio_invoice_series_name');
+    }
+    if (!$number) {
+        $number = $order->get_data_info('oblio_invoice_number');
+    }
+    $link = $order->get_data_info('oblio_invoice_link');
+
+    if (!$link || !$series_name || !$number) {
+        $result['message'] = 'Nu exista factura de stornat';
+        return $result;
+    }
+    if ($order->get_data_info('oblio_storno_link')) {
+        $result['message'] = 'Factura este deja stornata';
+        return $result;
+    }
+    if (!$email || !$secret || !$cui || !$series_cfg) {
+        $result['message'] = 'Eroare configurare, intra la Oblio &gt; Setari';
+        return $result;
+    }
+
+    $data = [
+            'cif'               => $cui,
+            'seriesName'        => $series_cfg,
+            'issueDate'         => date('Y-m-d'),
+            'idempotencyKey'    => _wp_oblio_idempotence_key($order_id) . '-storno',
+            'referenceDocument' => [
+                    'type'       => 'Factura',
+                    'refund'     => 1,
+                    'seriesName' => $series_name,
+                    'number'     => (int) $number,
+            ],
+    ];
+
+    try {
+        $accessTokenHandler = new OblioSoftware\Api\AccessTokenHandler();
+        $api = new OblioSoftware\Api($email, $secret, $accessTokenHandler);
+        $response = $api->createInvoice($data);
+
+        if (isset($response['status']) && (int) $response['status'] === 200) {
+            try {
+                wc_transaction_query('start');
+
+                $order->set_data_info('oblio_storno_series_name', $response['data']['seriesName']);
+                $order->set_data_info('oblio_storno_number', $response['data']['number']);
+                $order->set_data_info('oblio_storno_link', $response['data']['link']);
+                $order->set_data_info('oblio_storno_date', date('Y-m-d'));
+                $order->save();
+
+                wc_transaction_query('commit');
+            } catch (Exception $e) {
+                wc_transaction_query('rollback');
+            }
+
+            $result['type']       = 'success';
+            $result['message']    = sprintf('Factura storno %s %s a fost emisa', $response['data']['seriesName'], $response['data']['number']);
+            $result['seriesName'] = $response['data']['seriesName'];
+            $result['number']     = $response['data']['number'];
+            $result['link']       = $response['data']['link'];
+        } else {
+            $result['message'] = $response['statusMessage'] ?? 'Eroare la stornare';
+        }
+    } catch (Exception $e) {
+        $message = $e->getMessage();
+        if ($message === 'The access token provided is invalid' && isset($accessTokenHandler)) {
+            $accessTokenHandler->clear();
+        }
+        $result['message'] = $message;
+    }
+    return $result;
+}
+
+
 function _wp_oblio_build_url($action, $post) {
     return get_site_url(null, 'wp-admin/admin-ajax.php?action=oblio_invoice&a=' . $action . '&id=' .
         (method_exists($post, 'get_id') ? $post->get_id() : $post->ID));
